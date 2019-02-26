@@ -20,7 +20,7 @@
 ## @stability    stable
 function start_download_server()
 {
-  if [[ "$DOWNLOAD_SERVER_IP" != "$LOCAL_HOST_IP" ]]; then
+  if [[ -n "$DOWNLOAD_SERVER_IP" && "$DOWNLOAD_SERVER_IP" != "$LOCAL_HOST_IP" ]]; then
     echo -e "\\033[31mERROR: Only $DOWNLOAD_SERVER_IP can start the download service.\\033[0m"
     return 1
   fi
@@ -30,6 +30,7 @@ function start_download_server()
   read -r myselect
   if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
   then
+    IS_DOWNLOAD_SERVER=true
     download_etcd_bin
     download_calico_bin
     download_docker_rpm

@@ -17,7 +17,7 @@
 # description: sumbarine install scripts.
 
 ROOT=$(cd "$(dirname "$0")"; pwd)
-SUBMARINE_INSTALLER_VERSION="v0.7"
+SUBMARINE_INSTALLER_VERSION="v0.8.0"
 PACKAGE_DIR=${ROOT}/package
 SCRIPTS_DIR=${ROOT}/scripts
 INSTALL_TEMP_DIR=${ROOT}/temp

@@ -22,26 +22,22 @@ function download_docker_rpm()
 {
   # download http server
   if [[ -n "$DOWNLOAD_HTTP" ]]; then
-    MY_DOCKER_ENGINE_SELINUX_RPM="${DOWNLOAD_HTTP}/downloads/docker/${DOCKER_ENGINE_SELINUX_RPM}"
     MY_DOCKER_ENGINE_RPM="${DOWNLOAD_HTTP}/downloads/docker/${DOCKER_ENGINE_RPM}"
   else
-    MY_DOCKER_ENGINE_SELINUX_RPM=${DOCKER_REPO}/${DOCKER_ENGINE_SELINUX_RPM}
-    MY_DOCKER_ENGINE_RPM=${DOCKER_REPO}/${DOCKER_ENGINE_RPM}
-  fi
-
-  # download docker rpm
-  if [[ -f ${DOWNLOAD_DIR}/docker/${DOCKER_ENGINE_SELINUX_RPM} ]]; then
-    echo "${DOWNLOAD_DIR}/docker/${DOCKER_ENGINE_SELINUX_RPM} is exist."
-  else
-    echo "download ${MY_DOCKER_ENGINE_SELINUX_RPM} ..."
-    wget -P "${DOWNLOAD_DIR}/docker/" "${MY_DOCKER_ENGINE_SELINUX_RPM}"
+    # Trim the last slash of DOCKER_REPO
+    DOCKER_REPO_TRIMED="$(echo -e "${DOCKER_REPO}" | sed -e 's/\/*$//')"
+    MY_DOCKER_ENGINE_RPM=${DOCKER_REPO_TRIMED}/${DOCKER_ENGINE_RPM}
   fi
 
   if [[ -f ${DOWNLOAD_DIR}/docker/${DOCKER_ENGINE_RPM} ]]; then
-    echo "${DOWNLOAD_DIR}/docker/${DOCKER_ENGINE_RPM} is exist."
+    echo "${DOWNLOAD_DIR}/docker/${DOCKER_ENGINE_RPM} already exists."
   else
     echo "download ${MY_DOCKER_ENGINE_RPM} ..."
     wget -P "${DOWNLOAD_DIR}/docker/" "${MY_DOCKER_ENGINE_RPM}"
+    if [[ $? -ne 0 ]]; then
+      echo -e "\\033[32mshell:> Failed to download ${DOCKER_ENGINE_RPM} of docker 
+        from ${MY_DOCKER_ENGINE_RPM} \\033[0m"
+    fi
   fi
 }
 
@@ -52,8 +48,7 @@ function install_docker_bin()
 {
   download_docker_rpm
 
-  yum -y localinstall "${DOWNLOAD_DIR}/docker/${DOCKER_ENGINE_SELINUX_RPM}"
-  yum -y localinstall "${DOWNLOAD_DIR}/docker/${DOCKER_ENGINE_RPM}"
+  sudo yum -y localinstall "${DOWNLOAD_DIR}/docker/${DOCKER_ENGINE_RPM}"
 }
 
 ## @description  uninstall docker bin
@@ -61,10 +56,7 @@ function install_docker_bin()
 ## @stability    stable
 function uninstall_docker_bin()
 {
-  download_docker_rpm
-
-  yum -y remove "${DOWNLOAD_DIR}/docker/${DOCKER_ENGINE_SELINUX_RPM}"
-  yum -y remove "${DOWNLOAD_DIR}/docker/${DOCKER_ENGINE_RPM}"
+  sudo yum -y remove "${DOCKER_VERSION}"
 }
 
 ## @description  install docker config
@@ -101,11 +93,11 @@ function install_docker_config()
   sed -i '1,16d' "$INSTALL_TEMP_DIR/docker/daemon.json"
 
   if [ ! -d "/etc/docker" ]; then
-    mkdir /etc/docker
+    sudo mkdir /etc/docker
   fi
 
-  cp "$INSTALL_TEMP_DIR/docker/daemon.json" /etc/docker/
-  cp "$INSTALL_TEMP_DIR/docker/docker.service" /etc/systemd/system/
+  sudo cp "$INSTALL_TEMP_DIR/docker/daemon.json" /etc/docker/
+  sudo cp "$INSTALL_TEMP_DIR/docker/docker.service" /etc/systemd/system/
 }
 
 ## @description  install docker
@@ -116,8 +108,8 @@ function install_docker()
   install_docker_bin
   install_docker_config
 
-  systemctl daemon-reload
-  systemctl enable docker.service
+  sudo systemctl daemon-reload
+  sudo systemctl enable docker.service
 }
 
 ## @description  unstall docker
@@ -126,15 +118,14 @@ function install_docker()
 function uninstall_docker()
 {
   echo "stop docker service"
-  systemctl stop docker
+  sudo systemctl stop docker
 
   echo "remove docker"
   uninstall_docker_bin
 
-  rm /etc/docker/daemon.json
-  rm /etc/systemd/system/docker.service
+  sudo rm /etc/systemd/system/docker.service
 
-  systemctl daemon-reload
+  sudo systemctl daemon-reload
 }
 
 ## @description  start docker
@@ -142,8 +133,8 @@ function uninstall_docker()
 ## @stability    stable
 function start_docker()
 {
-  systemctl restart docker
-  systemctl status docker
+  sudo systemctl restart docker
+  sudo systemctl status docker
   docker info
 }
 
@@ -152,8 +143,8 @@ function start_docker()
 ## @stability    stable
 function stop_docker()
 {
-  systemctl stop docker
-  systemctl status docker
+  sudo systemctl stop docker
+  sudo systemctl status docker
 }
 
 ## @description  check if the containers exist

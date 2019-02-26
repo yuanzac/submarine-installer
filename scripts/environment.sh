@@ -20,7 +20,7 @@
 ## @stability    stable
 function check_operationSystem()
 {
-  echo -e "The submarine assembly support \\033[32m[centos-release-7-3.1611.el7.centos.x86_64]\\033[0m or higher operating system version."
+  echo -e "The submarine assembly support \\033[32m[centos-release-7-5.1804.el7.centos.x86_64]\\033[0m or higher operating system version."
 
   case ${OPERATING_SYSTEM} in
   centos)
@@ -40,8 +40,8 @@ function check_operationSystem()
 function update_operationSystemKernel()
 {
   echo "If the server is unable to connect to the network, execute the following command yourself:
-        wget http://vault.centos.org/7.3.1611/os/x86_64/Packages/kernel-headers-3.10.0-514.el7.x86_64.rpm
-        rpm -ivh kernel-headers-3.10.0-514.el7.x86_64.rpm"
+        wget http://vault.centos.org/7.5.1804/os/x86_64/Packages/kernel-headers-3.10.0-862.el7.x86_64.rpm
+        rpm -ivh kernel-headers-3.10.0-862.el7.x86_64.rpm"
 
   echo -n "Do you want to kernel upgrades?[y|n]"
   read -r myselect
@@ -66,7 +66,7 @@ centos)
   local kernelVersion
   kernelVersion=$(uname -r)
 
-  echo -e "Submarine support operating system kernel version is \\033[32m 3.10.0-514.el7.x86_64 \\033[0m"
+  echo -e "Submarine support operating system kernel version is \\033[32m 3.10.0-862.el7.x86_64 \\033[0m"
   echo -e "Current operating system kernel version is \\e[31m${kernelVersion}\\e[0m"
 
   update_operationSystemKernel
@@ -192,7 +192,6 @@ function prepare_nvidia_environment()
 {
   echo "prepare nvidia environment ..."
 
-  yum -y update
   yum install "kernel-devel-$(uname -r)" "kernel-headers-$(uname -r)"
 
   yum -y install epel-release

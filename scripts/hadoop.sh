@@ -50,7 +50,7 @@ function download_yarn_container_executor()
   fi
 
   if [[ -f "${DOWNLOAD_DIR}/hadoop/container-executor" ]]; then
-    echo "${DOWNLOAD_DIR}/hadoop/container-executor is exist."
+    echo "${DOWNLOAD_DIR}/hadoop/container-executor already exists."
   else
     if [[ -n "$DOWNLOAD_HTTP" ]]; then
       echo "download ${MY_YARN_CONTAINER_EXECUTOR_PATH} ..."

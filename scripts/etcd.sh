@@ -28,7 +28,7 @@ function download_etcd_bin()
   fi
 
   if [[ -f "${DOWNLOAD_DIR}/etcd/${ETCD_TAR_GZ}" ]]; then
-    echo "${DOWNLOAD_DIR}/etcd/${ETCD_TAR_GZ} is exist."
+    echo "${DOWNLOAD_DIR}/etcd/${ETCD_TAR_GZ} already exists."
   else
     echo "download ${MY_ETCD_DOWNLOAD_URL} ..."
     wget -P "${DOWNLOAD_DIR}/etcd" "${MY_ETCD_DOWNLOAD_URL}"

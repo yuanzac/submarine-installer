@@ -34,21 +34,21 @@ function download_calico_bin()
   mkdir -p "${DOWNLOAD_DIR}/calico"
 
   if [[ -f ${DOWNLOAD_DIR}/calico/calico ]]; then
-    echo "${DOWNLOAD_DIR}/calico/calico is exist."
+    echo "${DOWNLOAD_DIR}/calico/calico already exists."
   else
     echo "download ${MY_CALICO_DOWNLOAD_URL} ..."
     wget -P "${DOWNLOAD_DIR}/calico" "${MY_CALICO_DOWNLOAD_URL}"
   fi
 
   if [[ -f ${DOWNLOAD_DIR}/calico/calicoctl ]]; then
-    echo "${DOWNLOAD_DIR}/calico is exist."
+    echo "${DOWNLOAD_DIR}/calico already exists."
   else
     echo "download ${MY_CALICOCTL_DOWNLOAD_URL} ..."
     wget -P "${DOWNLOAD_DIR}/calico" "${MY_CALICOCTL_DOWNLOAD_URL}"
   fi
 
   if [[ -f ${DOWNLOAD_DIR}/calico/calico-ipam ]]; then
-    echo "${DOWNLOAD_DIR}/calico/calico-ipam is exist."
+    echo "${DOWNLOAD_DIR}/calico/calico-ipam already exists."
   else
     echo "download ${MY_CALICO_IPAM_DOWNLOAD_URL} ..."
     wget -P "${DOWNLOAD_DIR}/calico" "${MY_CALICO_IPAM_DOWNLOAD_URL}"
@@ -62,13 +62,13 @@ function install_calico_bin()
 {
   download_calico_bin
 
-  cp -f "${DOWNLOAD_DIR}/calico/calico" /usr/bin/calico
-  cp -f "${DOWNLOAD_DIR}/calico/calicoctl" /usr/bin/calicoctl
-  cp -f "${DOWNLOAD_DIR}/calico/calico-ipam" /usr/bin/calico-ipam
+  sudo cp -f "${DOWNLOAD_DIR}/calico/calico" /usr/bin/calico
+  sudo cp -f "${DOWNLOAD_DIR}/calico/calicoctl" /usr/bin/calicoctl
+  sudo cp -f "${DOWNLOAD_DIR}/calico/calico-ipam" /usr/bin/calico-ipam
 
-  chmod +x /usr/bin/calico
-  chmod +x /usr/bin/calicoctl
-  chmod +x /usr/bin/calico-ipam
+  sudo chmod +x /usr/bin/calico
+  sudo chmod +x /usr/bin/calicoctl
+  sudo chmod +x /usr/bin/calico-ipam
 }
 
 ## @description  install calico config
@@ -76,7 +76,7 @@ function install_calico_bin()
 ## @stability    stable
 function install_calico_config()
 {
-  mkdir -p /etc/calico
+  sudo mkdir -p /etc/calico
 
   cp -rf "${PACKAGE_DIR}/calico" "${INSTALL_TEMP_DIR}/"
 
@@ -97,19 +97,19 @@ function install_calico_config()
   sed -i "s/ETCD_ENDPOINTS_REPLACE/${etcdEndpoints}/g" "$INSTALL_TEMP_DIR/calico/calicoctl.cfg"
 
   if [[ ! -d /etc/calico ]]; then
-    mkdir /etc/calico
+    sudo mkdir /etc/calico
   else
-    rm -rf /etc/calico/*
+    sudo rm -rf /etc/calico/*
   fi
 
-  cp -f "$INSTALL_TEMP_DIR/calico/calicoctl.cfg" /etc/calico/calicoctl.cfg
+  sudo cp -f "$INSTALL_TEMP_DIR/calico/calicoctl.cfg" /etc/calico/calicoctl.cfg
 
   sed -i "s/ETCD_ENDPOINTS_REPLACE/${etcdEndpoints}/g" "$INSTALL_TEMP_DIR/calico/calico-node.service"
   sed -i "s/CALICO_IPV4POOL_CIDR_REPLACE/${CALICO_IPV4POOL_CIDR}/g" "$INSTALL_TEMP_DIR/calico/calico-node.service"
-  cp "$INSTALL_TEMP_DIR/calico/calico-node.service" /etc/systemd/system/
+  sudo cp "$INSTALL_TEMP_DIR/calico/calico-node.service" /etc/systemd/system/
 
-  systemctl daemon-reload
-  systemctl enable calico-node.service
+  sudo systemctl daemon-reload
+  sudo systemctl enable calico-node.service
 }
 
 ## @description  modify kernel network config
@@ -118,14 +118,14 @@ function install_calico_config()
 function kernel_network_config()
 {
   if [ "$(grep -c "net.ipv4.conf.all.rp_filter=1" /etc/sysctl.conf)" -eq '0' ]; then
-    echo "net.ipv4.conf.all.rp_filter=1" >>/etc/sysctl.conf
+    sudo echo "net.ipv4.conf.all.rp_filter=1" >>/etc/sysctl.conf
   fi
 
   if [ "$(grep -c "net.ipv4.ip_forward=1" /etc/sysctl.conf)" -eq '0' ]; then
-    echo "net.ipv4.ip_forward=1" >>/etc/sysctl.conf
+    sudo echo "net.ipv4.ip_forward=1" >>/etc/sysctl.conf
   fi
 
-  sysctl -p
+  sudo sysctl -p
 }
 
 ## @description  check if the calico-network exist
@@ -150,7 +150,7 @@ function verification_calico()
     echo "Create a calico network"
     docker network create --driver calico --ipam-driver calico-ipam "${CALICO_NETWORK_NAME}"
   else
-    echo "calico network ${CALICO_NETWORK_NAME} is exist."
+    echo "calico network ${CALICO_NETWORK_NAME} already exists."
   fi
 
   local verifyA="verify-calico-network-A"
@@ -197,15 +197,15 @@ function install_calico()
 function uninstall_calico()
 {
   echo "stop calico-node.service"
-  systemctl stop calico-node.service
+  sudo systemctl stop calico-node.service
 
   echo "rm /usr/bin/calico ..."
-  rm /usr/bin/calicoctl
-  rm /usr/bin/calico
-  rm /usr/bin/calico-ipam
+  sudo rm /usr/bin/calicoctl
+  sudo rm /usr/bin/calico
+  sudo rm /usr/bin/calico-ipam
 
-  rm -rf /etc/calico/
-  rm /etc/systemd/system/calico-node.service
+  sudo rm -rf /etc/calico/
+  sudo rm /etc/systemd/system/calico-node.service
   systemctl daemon-reload
 }
 
@@ -214,8 +214,8 @@ function uninstall_calico()
 ## @stability    stable
 function start_calico()
 {
-  systemctl restart calico-node.service
-  systemctl status calico-node.service
+  sudo systemctl restart calico-node.service
+  sudo systemctl status calico-node.service
 }
 
 ## @description  stop calico
@@ -223,6 +223,6 @@ function start_calico()
 ## @stability    stable
 function stop_calico()
 {
-  systemctl stop calico-node.service
-  systemctl status calico-node.service
+  sudo systemctl stop calico-node.service
+  sudo systemctl status calico-node.service
 }
