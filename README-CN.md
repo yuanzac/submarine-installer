@@ -22,7 +22,7 @@ hadoop 在 2.9 版本中就已经让 YARN 支持了 Docker 容器的资源调度
 
   LOCAL_DNS_HOST：服务器端本地 DNS IP 地址配置，可以从 `/etc/resolv.conf` 中查看
 
-  YARN_DNS_HOST：yarn dns server 启动的 IP 地址
+  YARN_REGISTRY_DNS_HOST：yarn dns server 启动的 IP 地址
 
 + **ETCD 配置项**
 

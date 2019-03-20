@@ -36,7 +36,7 @@ DOWNLOAD_HTTP=""
 . ${ROOT}/scripts/download-server.sh
 . ${ROOT}/scripts/environment.sh
 . ${ROOT}/scripts/etcd.sh
-. ${ROOT}/scripts/hadoop.sh
+. ${ROOT}/scripts/yarn.sh
 . ${ROOT}/scripts/menu.sh
 . ${ROOT}/scripts/nvidia.sh
 . ${ROOT}/scripts/nvidia-docker.sh
@@ -94,7 +94,7 @@ do
     "0")
       menu_index="$menu_choice"
     ;;
-    "1"|"2"|"3"|"4"|"5")
+    "1"|"2"|"3"|"4"|"5"|"6"|"7"|"8")
       # echo "aaaa=$menu_index-$menu_choice"
       menu_process
       if [[ $? = 1 ]]; then
@@ -104,10 +104,10 @@ do
     ;;
     "a")
       exit_install
-      ;;
+    ;;
     "q")
       exit_install
-      ;;
+    ;;
     *)
       menu_index="0"
       menu_choice="0"
