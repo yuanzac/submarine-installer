@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License. See accompanying LICENSE file.
+-->
+ 
+<configuration>
+  <property>
+    <name>local.hostname.nn1</name>
+    <value>ml2.jd.163.org</value>
+  </property>
+  <property>
+    <name>local.hostname.nn2</name>
+    <value>ml3.jd.163.org</value>
+  </property>
+
+  <property>
+    <name>local.hostname.nn3</name>
+    <value>hadoop2246.jd.163.org:8020</value>
+  </property>
+  <property>
+    <name>local.hostname.nn4</name>
+    <value>hadoop2247.jd.163.org:8020</value>
+  </property>
+
+  <property>
+    <name>local.hostname.nn5</name>
+    <value>hadoop3000.jd.163.org:8020</value>
+  </property>
+  <property>
+    <name>local.hostname.nn6</name>
+    <value>hadoop3001.jd.163.org:8020</value>
+  </property>
+
+  <property>
+    <name>local.hostname.nn17</name>
+    <value>hadoop278.lt.163.org</value>
+  </property>
+  <property>
+    <name>local.hostname.nn18</name>
+    <value>hadoop279.lt.163.org</value>
+  </property>
+  <property>
+    <name>local.hostname.nn19</name>
+    <value>hadoop517.lt.163.org</value>
+  </property>
+  <property>
+    <name>local.hostname.nn20</name>
+    <value>hadoop518.lt.163.org</value>
+  </property>
+  <property>
+    <name>local.hostname.nn21</name>
+    <value>hadoop935.hz.163.org</value>
+  </property>
+  <property>
+    <name>local.hostname.nn22</name>
+    <value>hadoop936.hz.163.org</value>
+  </property>
+
+  <property>
+    <name>dfs.ha.namenodes.mldev</name>
+    <value>nn1,nn2</value>
+  </property>
+
+  <property>
+    <name>dfs.ha.namenodes.hz-cluster7</name>
+    <value>nn3,nn4</value>
+  </property>
+
+  <property>
+    <name>dfs.ha.namenodes.hz-cluster8</name>
+    <value>nn5,nn6</value>
+  </property>
+
+   <property>
+    <name>dfs.ha.namenodes.hz-cluster3</name>
+    <value>nn17,nn18</value>
+  </property>
+   <property>
+    <name>dfs.ha.namenodes.hz-cluster4</name>
+    <value>nn19,nn20</value>
+  </property>
+   <property>
+    <name>dfs.ha.namenodes.hz-cluster5</name>
+    <value>nn21,nn22</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.mldev.nn1</name>
+    <value>${local.hostname.nn1}:8020</value>
+  </property>
+  <property>
+    <name>dfs.namenode.rpc-address.mldev.nn2</name>
+    <value>${local.hostname.nn2}:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.hz-cluster7.nn3</name>
+    <value>${local.hostname.nn3}:8020</value>
+  </property>
+  <property>
+    <name>dfs.namenode.rpc-address.hz-cluster7.nn4</name>
+    <value>${local.hostname.nn4}:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.hz-cluster8.nn5</name>
+    <value>${local.hostname.nn5}:8020</value>
+  </property>
+  <property>
+    <name>dfs.namenode.rpc-address.hz-cluster8.nn6</name>
+    <value>${local.hostname.nn6}:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.namenode.rpc-address.hz-cluster3.nn17</name>
+    <value>${local.hostname.nn17}:8020</value>
+  </property>
+  <property>
+    <name>dfs.namenode.rpc-address.hz-cluster3.nn18</name>
+    <value>${local.hostname.nn18}:8020</value>
+  </property>
+  <property>
+    <name>dfs.namenode.rpc-address.hz-cluster4.nn19</name>
+    <value>${local.hostname.nn19}:8020</value>
+  </property>
+  <property>
+    <name>dfs.namenode.rpc-address.hz-cluster4.nn20</name>
+    <value>${local.hostname.nn20}:8020</value>
+  </property>
+  <property>
+    <name>dfs.namenode.rpc-address.hz-cluster5.nn21</name>
+    <value>${local.hostname.nn21}:8020</value>
+  </property>
+  <property>
+    <name>dfs.namenode.rpc-address.hz-cluster5.nn22</name>
+    <value>${local.hostname.nn22}:8020</value>
+  </property>
+
+  <property>
+    <name>dfs.nameservices</name>
+    <value>mldev,hz-cluster3,hz-cluster4,hz-cluster5,hz-cluster7,hz-cluster8</value>
+  </property>
+
+  <property>
+    <name>dfs.client.failover.proxy.provider.mldev</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+    <name>dfs.client.failover.proxy.provider.hz-cluster7</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+    <name>dfs.client.failover.proxy.provider.hz-cluster8</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <property>
+    <name>dfs.client.failover.proxy.provider.hz-cluster3</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+  <property>
+    <name>dfs.client.failover.proxy.provider.hz-cluster4</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+  <property>
+    <name>dfs.client.failover.proxy.provider.hz-cluster5</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+
+  <!-- Permissions configuration -->
+  <property>
+    <name>fs.permissions.umask-mode</name>
+    <value>027</value>
+  </property>
+    
+  <property>
+    <name>dfs.blocksize</name>
+    <value>268435456</value>
+  </property>
+   
+  <property>
+    <name>dfs.client.read.shortcircuit</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>dfs.client.read.shortcircuit.streams.cache.size</name>
+    <value>1024</value>
+  </property>
+
+  <property>
+    <name>dfs.client.read.shortcircuit.streams.cache.size.expiry.ms</name>
+    <value>300000</value>
+  </property>
+
+  <property>
+    <name>dfs.domain.socket.path</name>
+    <value>/var/lib/hadoop-hdfs/dn_socket</value>
+  </property>
+</configuration>

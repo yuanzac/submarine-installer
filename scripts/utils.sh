@@ -64,6 +64,100 @@ function check_install_conf()
 {
   echo "Check if the configuration file configuration is correct ..."
 
+  # check resource manager
+  rmCount=${#YARN_RESOURCE_MANAGER_HOSTS[@]}
+  if [[ $rmCount -gt 2 ]]; then # <>2
+    echo "Number of resource manager nodes = [$rmCount], must be configured equal 2 servers! "
+    exit_install
+  fi
+  for ip in "${YARN_RESOURCE_MANAGER_HOSTS[@]}"
+  do
+    if ! valid_ip "$ip"; then
+      echo "YARN_RESOURCE_MANAGER_HOSTS=[$ip], IP address format is incorrect! "
+      exit_install
+    fi
+  done
+
+  # check node manager
+  nmCount=${#YARN_NODE_MANAGER_HOSTS[@]}
+  if [[ $nmCount -le 1 ]]; then # <1
+    echo "Number of node manager nodes = [$nmCount], must be configured more than the 1 servers! "
+    exit_install
+  fi
+  for ip in "${YARN_NODE_MANAGER_HOSTS[@]}"
+  do
+    if ! valid_ip "$ip"; then
+      echo "YARN_NODE_MANAGER_HOSTS=[$ip], IP address format is incorrect! "
+      exit_install
+    fi
+  done
+
+  # 
+  if ! valid_ip "${YARN_REGISTRY_DNS_HOST}"; then
+    echo "YARN_REGISTRY_DNS_HOST=[$YARN_REGISTRY_DNS_HOST], IP address format is incorrect! "
+    exit_install
+  fi
+
+  # 
+  if [ -z "${YARN_REGISTRY_DNS_HOST_PORT}" ]; then
+    echo "YARN_REGISTRY_DNS_HOST_PORT=[$YARN_REGISTRY_DNS_HOST_PORT] is empty! "
+    exit_install
+  fi
+
+  # 
+  if ! valid_ip "${YARN_TIMELINE_HOST}"; then
+    echo "YARN_TIMELINE_HOST=[$YARN_TIMELINE_HOST], IP address format is incorrect! "
+    exit_install
+  fi
+
+  # 
+  if ! valid_ip "${YARN_JOB_HISTORY_HOST}"; then
+    echo "YARN_JOB_HISTORY_HOST=[$YARN_JOB_HISTORY_HOST], IP address format is incorrect! "
+    exit_install
+  fi
+  
+  # 
+  if ! valid_ip "${YARN_SPARK_HISTORY_HOST}"; then
+    echo "YARN_SPARK_HISTORY_HOST=[$YARN_SPARK_HISTORY_HOST], IP address format is incorrect! "
+    exit_install
+  fi
+
+  # Check if it is empty
+  if [ -z "${LOCAL_REALM}" ]; then
+    echo "LOCAL_REALM=[$LOCAL_REALM] can not be empty! "
+    exit_install
+  fi
+
+  if [ -z "${HADOOP_KEYTAB_LOCATION}" ]; then
+    echo "HADOOP_KEYTAB_LOCATION=[$HADOOP_KEYTAB_LOCATION] can not be empty! "
+    exit_install
+  fi
+
+  if [ -z "${HADOOP_PRINCIPAL}" ]; then
+    echo "HADOOP_PRINCIPAL=[$HADOOP_PRINCIPAL] can not be empty! "
+    exit_install
+  fi
+
+  if [ -z "${MAPRED_KEYTAB_LOCATION}" ]; then
+    echo "MAPRED_KEYTAB_LOCATION=[$MAPRED_KEYTAB_LOCATION] can not be empty! "
+    exit_install
+  fi
+
+  if [ -z "${YARN_KEYTAB_LOCATION}" ]; then
+    echo "YARN_KEYTAB_LOCATION=[$YARN_KEYTAB_LOCATION] can not be empty! "
+    exit_install
+  fi
+
+  if [ -z "${HTTP_KEYTAB_LOCATION}" ]; then
+    echo "HTTP_KEYTAB_LOCATION=[$HTTP_KEYTAB_LOCATION] can not be empty! "
+    exit_install
+  fi
+
+  if [ -z "${HTTP_PRINCIPAL}" ]; then
+    echo "HTTP_PRINCIPAL=[$HTTP_PRINCIPAL] can not be empty! "
+    exit_install
+  fi
+
   # check etcd conf
   hostCount=${#ETCD_HOSTS[@]}
   if [[ $hostCount -lt 3 && hostCount -ne 0 ]]; then # <>2
@@ -73,7 +167,7 @@ function check_install_conf()
   for ip in "${ETCD_HOSTS[@]}"
   do
     if ! valid_ip "$ip"; then
-      echo "]ETCD_HOSTS=[$ip], IP address format is incorrect! "
+      echo "ETCD_HOSTS=[$ip], IP address format is incorrect! "
       exit_install
     fi
   done
@@ -87,6 +181,21 @@ function indexByEtcdHosts() {
   index=0
   while [ "$index" -lt "${#ETCD_HOSTS[@]}" ]; do
     if [ "${ETCD_HOSTS[$index]}" = "$1" ]; then
+      echo $index
+      return
+    fi
+    (( index++ ))
+  done
+  echo ""
+}
+
+## @description  index by Resource Manager Hosts list
+## @audience     public
+## @stability    stable
+function indexByRMHosts() {
+  index=0
+  while [ "$index" -lt "${#YARN_RESOURCE_MANAGER_HOSTS[@]}" ]; do
+    if [ "${YARN_RESOURCE_MANAGER_HOSTS[$index]}" = "$1" ]; then
       echo $index
       return
     fi
