@@ -15,6 +15,7 @@
 <configuration>
   <property>
     <name>local.hostname.nn1</name>
+<<<<<<< HEAD
     <value>ml2.jd.163.org</value>
   </property>
   <property>
@@ -71,6 +72,7 @@
   </property>
 
   <property>
+<<<<<<< HEAD
     <name>dfs.ha.namenodes.hz-cluster7</name>
     <value>nn3,nn4</value>
   </property>
@@ -94,6 +96,8 @@
   </property>
 
   <property>
+=======
+>>>>>>> origin/master
     <name>dfs.namenode.rpc-address.mldev.nn1</name>
     <value>${local.hostname.nn1}:8020</value>
   </property>
@@ -102,6 +106,7 @@
     <value>${local.hostname.nn2}:8020</value>
   </property>
 
+<<<<<<< HEAD
   <property>
     <name>dfs.namenode.rpc-address.hz-cluster7.nn3</name>
     <value>${local.hostname.nn3}:8020</value>
@@ -148,6 +153,12 @@
   <property>
     <name>dfs.nameservices</name>
     <value>mldev,hz-cluster3,hz-cluster4,hz-cluster5,hz-cluster7,hz-cluster8</value>
+=======
+
+  <property>
+    <name>dfs.nameservices</name>
+    <value>mldev</value>
+>>>>>>> origin/master
   </property>
 
   <property>
@@ -155,6 +166,7 @@
     <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
   </property>
 
+<<<<<<< HEAD
   <property>
     <name>dfs.client.failover.proxy.provider.hz-cluster7</name>
     <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
@@ -178,6 +190,8 @@
     <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
   </property>
 
+=======
+>>>>>>> origin/master
   <!-- Permissions configuration -->
   <property>
     <name>fs.permissions.umask-mode</name>
