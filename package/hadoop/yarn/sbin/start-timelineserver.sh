@@ -19,7 +19,7 @@ cd `dirname $0`
 common_bin=`pwd`
 
 if [ `whoami` != "yarn" ];then
-  echo "[ERROR]:Registrydns must be started with the [yarn] user!"
+  echo "[ERROR]:timelineserver must be started with the [yarn] user!"
 fi
 
 HADOOP_SHELL_SCRIPT_DEBUG=true YARN_LOGFILE=timelineserver.log ${common_bin}/yarn-daemon.sh start timelineserver

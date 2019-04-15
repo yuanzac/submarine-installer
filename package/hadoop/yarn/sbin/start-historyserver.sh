@@ -18,8 +18,8 @@
 cd `dirname $0`
 common_bin=`pwd`
 
-if [ `whoami` != "yarn" ];then
-  echo "[ERROR]:Registrydns must be started with the [yarn] user!"
+if [ `whoami` != "mapred" ];then
+  echo "[ERROR]:jobhistory must be started with the [mapred] user!"
 fi
 
 YARN_LOGFILE=mr-historyserver.log ${common_bin}/mr-jobhistory-daemon.sh start historyserver

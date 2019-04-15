@@ -86,8 +86,20 @@ function install_docker_config()
 
   sed -i "s/DOCKER_REGISTRY_REPLACE/${DOCKER_REGISTRY}/g" "$INSTALL_TEMP_DIR/docker/daemon.json"
   sed -i "s/LOCAL_HOST_IP_REPLACE/${LOCAL_HOST_IP}/g" "$INSTALL_TEMP_DIR/docker/daemon.json"
-  sed -i "s/YARN_REGISTRY_DNS_HOST_REPLACE/${YARN_REGISTRY_DNS_HOST}/g" "$INSTALL_TEMP_DIR/docker/daemon.json"
-  sed -i "s/LOCAL_DNS_HOST_REPLACE/${LOCAL_DNS_HOST}/g" "$INSTALL_TEMP_DIR/docker/daemon.json"
+  YARN_REGISTRY_DNS_IP=$(getent hosts "${YARN_REGISTRY_DNS_HOST}" | awk '{ print $1 }')
+  sed -i "s/YARN_REGISTRY_DNS_HOST_REPLACE/${YARN_REGISTRY_DNS_IP}/g" "$INSTALL_TEMP_DIR/docker/daemon.json"
+  
+  hosts=${LOCAL_DNS_HOST//,/ }
+  hosts_length=0
+  for element in $hosts
+  do
+    hosts_length=$((${hosts_length} + 1))
+    if [ ${hosts_length} != 1 ]; then
+      NEW_LOCAL_DNS_HOST="${NEW_LOCAL_DNS_HOST}, "
+    fi
+      NEW_LOCAL_DNS_HOST="${NEW_LOCAL_DNS_HOST}\"${element}\""
+  done
+  sed -i "s/LOCAL_DNS_HOST_REPLACE/${NEW_LOCAL_DNS_HOST}/g" "$INSTALL_TEMP_DIR/docker/daemon.json"
 
   # Delete the ASF license comment in the daemon.json file, otherwise it will cause a json format error.
   sed -i '1,16d' "$INSTALL_TEMP_DIR/docker/daemon.json"

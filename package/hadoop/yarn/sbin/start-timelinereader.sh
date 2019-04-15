@@ -19,7 +19,7 @@ cd `dirname $0`
 common_bin=`pwd`
 
 if [ `whoami` != "yarn" ];then
-  echo "[ERROR]:Registrydns must be started with the [yarn] user!"
+  echo "[ERROR]:timelinereader must be started with the [yarn] user!"
 fi
 
 YARN_LOGFILE=timelinereader.log ${common_bin}/yarn-daemon.sh start timelinereader

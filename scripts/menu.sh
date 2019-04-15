@@ -35,8 +35,6 @@ echo -e "  \\e[32m3.uninstall component [..]\\e[0m"
 echo -e "  \\e[32m4.start component [..]\\e[0m"
 echo -e "  \\e[32m5.stop component [..]\\e[0m"
 echo -e "  \\e[32m6.start download server [..]\\e[0m"
-echo -e "  \\e[32m7.install YARN [..]\\e[0m"
-echo -e "  \\e[32m8.uninstall YARN [..]\\e[0m"
 echo -e ""
 echo -e "  \\e[32mq.quit\\e[0m"
 cat<<MENULIST
@@ -89,12 +87,13 @@ HOST:${LOCAL_HOST_IP}            DOWNLOAD_SERVER:http://${DOWNLOAD_SERVER_IP}:${
 [Main menu] > [install component]
 ------------------------------------------------------------------------------------
 MENULIST
-echo -e "  \\e[32m1.instll etcd\\e[0m"
-echo -e "  \\e[32m2.instll docker\\e[0m"
-echo -e "  \\e[32m3.instll calico network\\e[0m"
-echo -e "  \\e[32m4.instll nvidia driver\\e[0m"
-echo -e "  \\e[32m5.instll nvidia docker\\e[0m"
-echo -e "  \\e[32m6.instll submarine autorun script\\e[0m"
+echo -e "  \\e[32m1.install etcd\\e[0m"
+echo -e "  \\e[32m2.install docker\\e[0m"
+echo -e "  \\e[32m3.install calico network\\e[0m"
+echo -e "  \\e[32m4.install nvidia driver\\e[0m"
+echo -e "  \\e[32m5.install nvidia docker\\e[0m"
+echo -e "  \\e[32m6.install submarine autorun script\\e[0m"
+echo -e "  \\e[32m7.install yarn\\e[0m"
 echo -e ""
 echo -e "  \\e[32mb.back main menu\\e[0m"
 cat<<MENULIST
@@ -115,16 +114,16 @@ cat<<MENULIST
 
 HOST:${LOCAL_HOST_IP}            DOWNLOAD_SERVER:http://${DOWNLOAD_SERVER_IP}:${DOWNLOAD_SERVER_PORT}
 ====================================================================================
-[Main menu] > [uninstll component]
+[Main menu] > [uninstall component]
 ------------------------------------------------------------------------------------
 MENULIST
-echo -e "  \\e[32m1.uninstll etcd\\e[0m"
-echo -e "  \\e[32m2.uninstll docker\\e[0m"
-echo -e "  \\e[32m3.uninstll calico network\\e[0m"
-echo -e "  \\e[32m4.uninstll nvidia driver\\e[0m"
-echo -e "  \\e[32m5.uninstll nvidia docker\\e[0m"
-echo -e "  \\e[32m6.uninstll yarn container-executor\\e[0m"
-echo -e "  \\e[32m7.uninstll submarine autorun script\\e[0m"
+echo -e "  \\e[32m1.uninstall etcd\\e[0m"
+echo -e "  \\e[32m2.uninstall docker\\e[0m"
+echo -e "  \\e[32m3.uninstall calico network\\e[0m"
+echo -e "  \\e[32m4.uninstall nvidia driver\\e[0m"
+echo -e "  \\e[32m5.uninstall nvidia docker\\e[0m"
+echo -e "  \\e[32m6.uninstall submarine autorun script\\e[0m"
+echo -e "  \\e[32m7.uninstall yarn\\e[0m"
 echo -e ""
 echo -e "  \\e[32mb.back main menu\\e[0m"
 cat<<MENULIST
@@ -145,19 +144,20 @@ cat<<MENULIST
 
 HOST:${LOCAL_HOST_IP}            DOWNLOAD_SERVER:http://${DOWNLOAD_SERVER_IP}:${DOWNLOAD_SERVER_PORT}
 ====================================================================================
-[Main menu] > [stop component]
+[Main menu] > [start component]
 ------------------------------------------------------------------------------------
 MENULIST
 echo -e "  \\e[32m1.start etcd\\e[0m"
 echo -e "  \\e[32m2.start docker\\e[0m"
 echo -e "  \\e[32m3.start calico network\\e[0m"
+echo -e "  \\e[32m4.start yarn\\e[0m"
 echo -e ""
 echo -e "  \\e[32mb.back main menu\\e[0m"
 cat<<MENULIST
 ====================================================================================
 MENULIST
 
-echo -ne "Please input your choice [\\e[32m1\\e[0m-\\e[32m3\\e[0m,\\e[32mb\\e[0m(back)]:"
+echo -ne "Please input your choice [\\e[32m1\\e[0m-\\e[32m4\\e[0m,\\e[32mb\\e[0m(back)]:"
 }
 
 ## @description  stop menu
@@ -177,13 +177,14 @@ MENULIST
 echo -e "  \\e[32m1.stop etcd\\e[0m"
 echo -e "  \\e[32m2.stop docker\\e[0m"
 echo -e "  \\e[32m3.stop calico network\\e[0m"
+echo -e "  \\e[32m4.stop yarn\\e[0m"
 echo -e ""
 echo -e "  \\e[32mb.back main menu\\e[0m"
 cat<<MENULIST
 ====================================================================================
 MENULIST
 
-echo -ne "Please input your choice [\\e[32m1\\e[0m-\\e[32m3\\e[0m,\\e[32mb\\e[0m(back)]:"
+echo -ne "Please input your choice [\\e[32m1\\e[0m-\\e[32m4\\e[0m,\\e[32mb\\e[0m(back)]:"
 }
 
 ## @description  install yarn menu
@@ -265,12 +266,6 @@ menu()
     ;;
     "6")
       start_download_server
-    ;;
-    "7")
-      install_yarn
-    ;;
-    "8")
-      uninstall_yarn
     ;;
     "q")
       exit 1
@@ -373,6 +368,14 @@ menu_process()
         install_submarine
       fi
     ;;
+    "2-7")
+      echo -n "Do you want to install yarn?[y|n]"
+      read -r myselect
+      if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
+      then
+        install_yarn
+      fi
+    ;;
 # uninstall component
     "3-1")
       echo -n "Do you want to uninstall etcd?[y|n]"
@@ -415,19 +418,19 @@ menu_process()
       fi
     ;;
     "3-6")
-      echo -n "Do you want to uninstall yarn container-executor?[y|n]"
-      read -r myselect
-      if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
-      then
-        uninstall_yarn
-      fi
-    ;;
-    "3-7")
       echo -n "Do you want to uninstall submarine autostart script?[y|n]"
       read -r myselect
       if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
       then
         uninstall_submarine
+      fi
+    ;;
+    "3-7")
+      echo -n "Do you want to uninstall yarn?[y|n]"
+      read -r myselect
+      if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
+      then
+        uninstall_yarn
       fi
     ;;
 # startup component
@@ -455,6 +458,14 @@ menu_process()
         start_calico
       fi
     ;;
+    "4-4")
+      echo -n "Do you want to startup yarn?[y|n]"
+      read -r myselect
+      if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
+      then
+        start_yarn
+      fi
+    ;;
 # stop component
     "5-1")
       echo -n "Do you want to stop etcd?[y|n]"
@@ -478,6 +489,14 @@ menu_process()
       if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
       then
         stop_calico
+      fi
+    ;;
+    "5-4")
+      echo -n "Do you want to stop yarn?[y|n]"
+      read -r myselect
+      if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
+      then
+        stop_yarn
       fi
     ;;
 # install yarn

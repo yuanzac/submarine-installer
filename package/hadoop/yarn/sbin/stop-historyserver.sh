@@ -15,17 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Solution: Grant user yarn the access to /sys/fs/cgroup/cpu,cpuacct,
-# which is the subfolder of cgroup mount destination.
-chown :yarn -R /sys/fs/cgroup/cpu,cpuacct
-chmod g+rwx -R /sys/fs/cgroup/cpu,cpuacct
+cd `dirname $0`
+common_bin=`pwd`
 
-# Grant user yarn the access to /sys/fs/cgroup/memory,
-# which is the subfolder of cgroup mount destination.
-chown :yarn -R /sys/fs/cgroup/memory
-chmod g+rwx -R /sys/fs/cgroup/memory
+if [ `whoami` != "mapred" ];then
+  echo "[ERROR]:jobhistory must be started with the [mapred] user!"
+fi
 
-
-# If GPUs are used，the access to cgroup devices folder is neede as well
-chown :yarn -R /sys/fs/cgroup/devices
-chmod g+rwx -R /sys/fs/cgroup/devices
+YARN_LOGFILE=mr-historyserver.log ${common_bin}/mr-jobhistory-daemon.sh stop historyserver

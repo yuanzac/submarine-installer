@@ -89,7 +89,7 @@
   <!--aux services-->
   <property>
     <name>yarn.nodemanager.aux-services</name>
-    <value>mapreduce_shuffle,spark_shuffle</value>
+    <value>mapreduce_shuffle,spark_shuffle,timeline_collector</value>
   </property>
   <property>
     <name>yarn.nodemanager.aux-services.mapreduce_shuffle.class</name>
@@ -103,10 +103,10 @@
     <name>spark.yarn.shuffle.stopOnFailure</name>
     <value>true</value>
   </property>
-  <!--property>
+  <property>
     <name>yarn.nodemanager.aux-services.timeline_collector.class</name>
     <value>org.apache.hadoop.yarn.server.timelineservice.collector.PerNodeTimelineCollectorsAuxService</value>
-  </property-->
+  </property>
 
   <!--local and log dir, 12 disks-->
   <property>
@@ -390,7 +390,7 @@
 
   <property>
     <name>yarn.timeline-service.hbase.coprocessor.jar.hdfs.location</name>
-    <value>YARN_TIMELINE_SERVICE_HBASE_COPROCESSOR_LOCATION_REPLACE</value>
+    <value>/hbase/coprocessor</value>
   </property>
 
   <property>
@@ -462,16 +462,6 @@
   </property>
 
   <property>
-    <name>yarn.nodemanager.aux-services</name>
-    <value>mapreduce_shuffle,timeline_collector</value>
-  </property>
-
-  <property>
-    <name>yarn.nodemanager.aux-services.timeline_collector.class</name>
-    <value>org.apache.hadoop.yarn.server.timelineservice.collector.PerNodeTimelineCollectorsAuxService</value>
-  </property>
-
-  <property>
     <description>The setting that controls whether yarn system metrics is
       published on the Timeline service or not by RM And NM.</description>
     <name>yarn.system-metrics-publisher.enabled</name>
@@ -506,12 +496,12 @@
 
   <property>
     <name>yarn.timeline-service.entity-group-fs-store.active-dir</name>
-    <value>/tmp/submarine-entity-file-history/active</value>
+    <value>YARN_TIMELINE_FS_STORE_DIR_REPLACE/active</value>
   </property>
 
   <property>
     <name>yarn.timeline-service.entity-group-fs-store.done-dir</name>
-    <value>/tmp/submarine-entity-file-history/done</value>
+    <value>YARN_TIMELINE_FS_STORE_DIR_REPLACE/done</value>
   </property>
 
   <!--To void confilcts with timeline server 8188 port-->
@@ -568,7 +558,7 @@
       The Kerberos principal to be used for spnego filter for the NM web interface.
     </description>
     <name>yarn.nodemanager.webapp.spnego-principal</name>
-    <value>HTTP_PRINCIPAL_REPLACE</value>
+    <value>HTTP/_HOST@${local.realm}</value>
   </property>
 
   <property>
@@ -584,7 +574,7 @@
       The Kerberos principal to be used for spnego filter for the RM web interface.
     </description>
     <name>yarn.resourcemanager.webapp.spnego-principal</name>
-    <value>HTTP_PRINCIPAL_REPLACE</value>
+    <value>HTTP/_HOST@${local.realm}</value>
   </property>
 
   <!-- cgroup configuration -->
@@ -596,15 +586,6 @@
     <name>yarn.nodemanager.linux-container-executor.cgroups.mount</name>
     <value>false</value>
   </property>
-  <!--property>
-    <name>yarn.nodemanager.linux-container-executor.cgroups.mount-path</name>
-    <value>/sys/fs/cgroup</value>
-  </property-->
-
-  <!--property>
-    <name>yarn.nodemanager.linux-container-executor.cgroups.mount-path</name>
-    <value>/yarn-cgroup/cpu</value>
-  </property-->
   <property>
     <name>yarn.nodemanager.resource.percentage-physical-cpu-limit</name>
     <value>80</value>
@@ -613,6 +594,12 @@
     <description>Whether virtual memory limits will be enforced for containers.</description>
     <name>yarn.nodemanager.vmem-check-enabled</name>
     <value>false</value>
+  </property>
+  <!-- Enable memory cgroup -->
+  <property>
+    <description>Whether YARN CGroups memory tracking is enabled.</description>
+    <name>yarn.nodemanager.resource.memory.enabled</name>
+    <value>true</value>
   </property>
 
   <!--docker configuration-->
@@ -642,11 +629,6 @@
     <value>CHOWN,DAC_OVERRIDE,FSETID,FOWNER,MKNOD,NET_RAW,SETGID,SETUID,SETFCAP,SETPCAP,NET_BIND_SERVICE,SYS_CHROOT,KILL,AUDIT_WRITE</value>
   </property>
     
-  <property>
-    <name>yarn.nodemanager.resource-plugins</name>
-    <value>yarn.io/gpu</value>
-  </property>
-
   <!--Yarn UI V2-->
   <property>
     <name>yarn.webapp.ui2.enable</name>
@@ -657,4 +639,15 @@
     <name>yarn.service.am.java.opts</name>
     <value>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=16002</value>
   </property-->
+
+  <property>
+    <name>yarn.service.base.path</name>
+    <value>/tmp/.LOCAL_CLUSTER_ID_REPLACE/</value>
+  </property>
+
+  <property>
+    <name>yarn.nodemanager.address</name>
+    <value>0.0.0.0:45454</value>
+  </property>
+ 
 </configuration>

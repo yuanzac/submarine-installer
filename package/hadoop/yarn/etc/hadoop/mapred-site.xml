@@ -34,7 +34,7 @@
   </property>
   <property>
     <name>mapreduce.jobhistory.keytab</name>
-    <value>/etc/security/keytabs/mapred.service.keytab</value>
+    <value>MAPRED_KEYTAB_LOCATION_REPLACE</value>
   </property>
   <property>
     <name>mapreduce.jobhistory.principal</name>
@@ -114,6 +114,6 @@
 
   <property>
     <name>mapreduce.job.hdfs-servers</name>
-    <value>hdfs://mldev,hdfs://hz-cluster3,hdfs://hz-cluster4,hdfs://hz-cluster5,hdfs://hz-cluster7,hdfs://hz-cluster8</value>
+    <value>FS_DEFAULTFS_REPLACE</value>
   </property>
 </configuration>

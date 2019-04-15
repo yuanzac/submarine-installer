@@ -15,17 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Solution: Grant user yarn the access to /sys/fs/cgroup/cpu,cpuacct,
-# which is the subfolder of cgroup mount destination.
-chown :yarn -R /sys/fs/cgroup/cpu,cpuacct
-chmod g+rwx -R /sys/fs/cgroup/cpu,cpuacct
+cd `dirname $0`
+common_bin=`pwd`
 
-# Grant user yarn the access to /sys/fs/cgroup/memory,
-# which is the subfolder of cgroup mount destination.
-chown :yarn -R /sys/fs/cgroup/memory
-chmod g+rwx -R /sys/fs/cgroup/memory
+if [ `whoami` != "root" ];then
+  echo "[ERROR]:Registrydns must be started with the [root] user!"
+fi
 
-
-# If GPUs are used，the access to cgroup devices folder is neede as well
-chown :yarn -R /sys/fs/cgroup/devices
-chmod g+rwx -R /sys/fs/cgroup/devices
+JSVC_HOME=${common_bin}/../bin YARN_LOGFILE=registrydns.log ${common_bin}/yarn-daemon.sh stop registrydns

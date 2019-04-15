@@ -199,7 +199,7 @@
       zookeeper quorum binding for the registry
     </description>
     <name>hadoop.registry.zk.quorum</name>
-    <value>YARN_ZK_ADDRESS</value>
+    <value>YARN_ZK_ADDRESS_REPLACE</value>
   </property>
 
   <property>

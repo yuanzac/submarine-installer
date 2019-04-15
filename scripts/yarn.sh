@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -20,25 +20,55 @@
 ## @stability    stable
 function install_yarn()
 {
-  mkdir -p "${INSTALL_TEMP_DIR}/hadoop/yarn"
-  cp -R "${PACKAGE_DIR}/hadoop/yarn/*" "${INSTALL_TEMP_DIR}/hadoop/yarn"
+  initialize_temp
 
-  kinit - kt ${HADOOP_KEYTAB_LOCATION} ${HADOOP_PRINCIPAL}
+  host=$(hostname)
+  index=$(indexByRMHosts "${host}")
+  if [[ -n "$index" || "x$YARN_TIMELINE_HOST" != "x$host" ]]; then
+    kinit -kt ${HADOOP_KEYTAB_LOCATION} ${HADOOP_PRINCIPAL}
+  fi
 
+  install_java_tarball
+  if [[ $? = 1 ]]; then
+    return 1
+  fi
+  install_yarn_tarball
+  if [[ $? = 1 ]]; then
+    return 1
+  fi
+  install_yarn_sbin
   install_yarn_rm_nm
   install_yarn_service
   install_registery_dns
+  install_timeline_server
   install_job_history
   install_mapred
   install_spark_suffle
-  install_yarn_sbin
-  install_yarn_container_executor
+  install_lzo_native
 
   # copy file
-  cp -f "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml" "${HADOOP_HOME}/etc/hadoop/"
-  cp -f "$INSTALL_TEMP_DIR/hadoop/yarn/etc/mapred-site.xml" "${HADOOP_HOME}/etc/hadoop/"
-  cp -f "$INSTALL_TEMP_DIR/hadoop/yarn/etc/core-site.xml" "${HADOOP_HOME}/etc/hadoop/"
-  cp -f "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hdfs-site.xml" "${HADOOP_HOME}/etc/hadoop/"
+  cp -f "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml" "${HADOOP_HOME}/etc/hadoop/"
+  cp -f "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/mapred-site.xml" "${HADOOP_HOME}/etc/hadoop/"
+  cp -f "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/core-site.xml" "${HADOOP_HOME}/etc/hadoop/"
+  cp -f "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/hdfs-site.xml" "${HADOOP_HOME}/etc/hadoop/"
+  cp -f "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/capacity-scheduler.xml" "${HADOOP_HOME}/etc/hadoop/"
+  cp -f "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/resource-types.xml" "${HADOOP_HOME}/etc/hadoop/"
+  cp -f "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/log4j.properties" "${HADOOP_HOME}/etc/hadoop/"
+  chown "${HADOOP_SETUP_USER}":yarn "${HADOOP_HOME}"/etc/hadoop/*
+}
+
+## @description  Initialize tmp dir for installation.
+## @audience     public
+## @stability    stable
+function initialize_temp()
+{
+  mkdir -p "${INSTALL_TEMP_DIR}/hadoop"
+  \cp -rf "${PACKAGE_DIR}/hadoop/yarn" "${INSTALL_TEMP_DIR}/hadoop"
+  isGpuEnabled=$(nvidia-smi)
+  if [[ -n "$isGpuEnabled" ]]; then
+    python ${SCRIPTS_DIR}/xmlcombine.py ${PACKAGE_DIR}/hadoop/yarn/etc/hadoop/yarn-site.xml ${PACKAGE_DIR}/hadoop/yarn/etc/hadoop/gpu/yarn-site-gpu.xml > "${INSTALL_TEMP_DIR}/hadoop/yarn/etc/hadoop/yarn-site.xml"
+  fi
+  chown -R ${HADOOP_SETUP_USER} "${INSTALL_TEMP_DIR}/hadoop"
 }
 
 ## @description  uninstall yarn
@@ -46,37 +76,12 @@ function install_yarn()
 ## @stability    stable
 function uninstall_yarn()
 {
-  rm -rf /etc/yarn/sbin/Linux-amd64-64/*
-  rm -rf /etc/yarn/sbin/etc/hadoop/*
-}
+  executor_dir=$(dirname "${YARN_CONTAINER_EXECUTOR_PATH}")
+  executor_conf_dir=$(dirname "${executor_dir}")/etc/hadoop
 
-## @description  download yarn container executor
-## @audience     public
-## @stability    stable
-function download_yarn_container_executor()
-{
-  # my download http server
-  if [[ -n "$DOWNLOAD_HTTP" ]]; then
-    MY_YARN_CONTAINER_EXECUTOR_PATH="${DOWNLOAD_HTTP}/downloads/hadoop/container-executor"
-  else
-    MY_YARN_CONTAINER_EXECUTOR_PATH=${YARN_CONTAINER_EXECUTOR_PATH}
-  fi
-
-  if [ ! -d "${DOWNLOAD_DIR}/hadoop" ]; then
-    mkdir -p "${DOWNLOAD_DIR}/hadoop"
-  fi
-
-  if [[ -f "${DOWNLOAD_DIR}/hadoop/container-executor" ]]; then
-    echo "${DOWNLOAD_DIR}/hadoop/container-executor already exists."
-  else
-    if [[ -n "$DOWNLOAD_HTTP" ]]; then
-      echo "download ${MY_YARN_CONTAINER_EXECUTOR_PATH} ..."
-      wget -P "${DOWNLOAD_DIR}/hadoop" "${MY_YARN_CONTAINER_EXECUTOR_PATH}"
-    else
-      echo "copy ${MY_YARN_CONTAINER_EXECUTOR_PATH} ..."
-      cp "${MY_YARN_CONTAINER_EXECUTOR_PATH}" "${DOWNLOAD_DIR}/hadoop/"
-    fi
-  fi
+  rm -rf "${YARN_CONTAINER_EXECUTOR_PATH}"
+  rm -rf "${executor_conf_dir}"
+  rm -rf "${HADOOP_HOME}"
 }
 
 ## @description  install yarn container executor
@@ -86,20 +91,66 @@ function install_yarn_container_executor()
 {
   echo "install yarn container executor file ..."
 
-  download_yarn_container_executor
-
-  if [ ! -d "/etc/yarn/sbin/Linux-amd64-64" ]; then
-    mkdir -p /etc/yarn/sbin/Linux-amd64-64
+  executor_dir=$(dirname "${YARN_CONTAINER_EXECUTOR_PATH}")
+  if [ ! -d "${executor_dir}" ]; then
+    mkdir -p "${executor_dir}"
   fi
-  if [ -f "/etc/yarn/sbin/Linux-amd64-64/container-executor" ]; then
-    rm /etc/yarn/sbin/Linux-amd64-64/container-executor
+  if [ -f "${YARN_CONTAINER_EXECUTOR_PATH}" ]; then
+    if [ -f "${HADOOP_HOME}/bin/container-executor" ]; then
+      rm ${YARN_CONTAINER_EXECUTOR_PATH}
+    fi
   fi
 
-  cp -f "${DOWNLOAD_DIR}/hadoop/container-executor" /etc/yarn/sbin/Linux-amd64-64
+  if [ -f "${HADOOP_HOME}/bin/container-executor" ]; then
+    cp -f "${HADOOP_HOME}/bin/container-executor" "${YARN_CONTAINER_EXECUTOR_PATH}"
+    rm "${HADOOP_HOME}/bin/container-executor"
+  fi
+  
+  sudo chmod 6755 "${executor_dir}"
+  sudo chown :yarn "${YARN_CONTAINER_EXECUTOR_PATH}"
+  sudo chmod 6050 "${YARN_CONTAINER_EXECUTOR_PATH}"
+}
 
-  sudo chmod 6755 /etc/yarn/sbin/Linux-amd64-64
-  sudo chown :yarn /etc/yarn/sbin/Linux-amd64-64/container-executor
-  sudo chmod 6050 /etc/yarn/sbin/Linux-amd64-64/container-executor
+## @description  Deploy hadoop yarn tar ball
+## @audience     public
+## @stability    stable
+function install_yarn_tarball()
+{
+  tag=`date '+%Y%m%d%H%M%S'`
+  if [ -f "${PACKAGE_DIR}/hadoop/${HADOOP_TARBALL}" ]; then
+    tar -zxvf "${PACKAGE_DIR}/hadoop/${HADOOP_TARBALL}" -C "${PACKAGE_DIR}/hadoop/"
+    mv "${PACKAGE_DIR}/hadoop/${HADOOP_VERSION}" "/home/${HADOOP_SETUP_USER}/${HADOOP_VERSION}-${tag}"
+    chown -R ${HADOOP_SETUP_USER} "/home/hadoop/${HADOOP_VERSION}-${tag}"
+    if [[ -d "${HADOOP_HOME}" ]] || [[ -L "${HADOOP_HOME}" ]]; then
+      rm -rf ${HADOOP_HOME}
+    fi
+    ln -s "/home/hadoop/${HADOOP_VERSION}-${tag}" "${HADOOP_HOME}"
+    chown ${HADOOP_SETUP_USER} "${HADOOP_HOME}"
+  else
+    echo "ERROR: Please put ${HADOOP_TARBALL} in the path of ${PACKAGE_DIR}/hadoop/ fristly."
+    return 1
+  fi
+}
+
+## @description  Deploy java tar ball
+## @audience     public
+## @stability    stable
+function install_java_tarball()
+{
+  if [[ -d "${JAVA_HOME}" ]] || [[ -L "${JAVA_HOME}" ]]; then
+    echo "JAVA_HOME already exists. There is no need to install java."
+  else 
+    if [[ -f "${PACKAGE_DIR}/java/${JAVA_TARBALL}" ]]; then
+      tar -zxvf "${PACKAGE_DIR}/java/${JAVA_TARBALL}" -C "${PACKAGE_DIR}/java/"
+      mv "${PACKAGE_DIR}/java/${JAVA_VERSION}" "/home/${HADOOP_SETUP_USER}/${JAVA_VERSION}"
+      chown -R ${HADOOP_SETUP_USER} "/home/hadoop/${JAVA_VERSION}"
+      ln -s "/home/hadoop/${JAVA_VERSION}" "${JAVA_HOME}" 
+    else
+      echo "Error: Failed to install java, please put java tallball in the path of
+        ${PACKAGE_DIR}/java/${JAVA_TARBALL}"
+      return 1
+    fi
+  fi
 }
 
 ## @description  install yarn resource & node manager
@@ -108,84 +159,188 @@ function install_yarn_container_executor()
 function install_yarn_rm_nm()
 {
   echo "install yarn config file ..."
+  host=$(hostname)
 
   find="/"
   replace="\\/"
   escape_yarn_nodemanager_local_dirs=${YARN_NODEMANAGER_LOCAL_DIRS//$find/$replace}
   escape_yarn_nodemanager_log_dirs=${YARN_NODEMANAGER_LOG_DIRS//$find/$replace}
+  escape_yarn_keytab_location=${YARN_KEYTAB_LOCATION//$find/$replace}
   escape_yarn_hierarchy=${YARN_HIERARCHY//$find/$replace}
+  escape_http_keytab_location=${HTTP_KEYTAB_LOCATION//$find/$replace}
+  escape_yarn_nodemanager_nodes_exclude_path=${YARN_RESOURCEMANAGER_NODES_EXCLUDE_PATH//$find/$replace}
+  escape_yarn_nodemanager_recovery_dir=${YARN_NODEMANAGER_RECOVERY_DIR//$find/$replace}
+  escape_fs_defaults=${FS_DEFAULTFS//$find/$replace}
+  escape_hadoop_http_authentication_signature_secret_file=${HADOOP_HTTP_AUTHENTICATION_SIGNATURE_SECRET_FILE//$find/$replace}
 
-  # container-executor.cfg
-  sed -i "s/YARN_NODEMANAGER_LOCAL_DIRS_REPLACE/${escape_yarn_nodemanager_local_dirs}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/container-executor.cfg"
-  sed -i "s/YARN_NODEMANAGER_LOG_DIRS_REPLACE/${escape_yarn_nodemanager_log_dirs}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/container-executor.cfg"
-  sed -i "s/DOCKER_REGISTRY_REPLACE/${DOCKER_REGISTRY}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/container-executor.cfg"
-  sed -i "s/CALICO_NETWORK_NAME_REPLACE/${CALICO_NETWORK_NAME}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/container-executor.cfg"
-  sed -i "s/YARN_HIERARCHY_REPLACE/${escape_yarn_hierarchy}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/container-executor.cfg"
+  # container-executor.cfg`
+  sed -i "s/YARN_NODEMANAGER_LOCAL_DIRS_REPLACE/${escape_yarn_nodemanager_local_dirs}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/container-executor.cfg"
+  sed -i "s/YARN_NODEMANAGER_LOG_DIRS_REPLACE/${escape_yarn_nodemanager_log_dirs}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/container-executor.cfg"
+  sed -i "s/DOCKER_REGISTRY_REPLACE/${DOCKER_REGISTRY}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/container-executor.cfg"
+  sed -i "s/CALICO_NETWORK_NAME_REPLACE/${CALICO_NETWORK_NAME}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/container-executor.cfg"
+  sed -i "s/YARN_HIERARCHY_REPLACE/${escape_yarn_hierarchy}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/container-executor.cfg"
+
+  # enable cgroup for yarn
+  . "${PACKAGE_DIR}/submarine/submarine.sh"
 
   # Delete the ASF license comment in the container-executor.cfg file, otherwise it will cause a cfg format error.
-  sed -i '1,16d' "$INSTALL_TEMP_DIR/hadoop/yarn/etc/container-executor.cfg"
-
-  if [ ! -d "/etc/yarn/sbin/etc/hadoop" ]; then
-    mkdir -p /etc/yarn/sbin/etc/hadoop
+  sed -i '1,16d' "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/container-executor.cfg"
+  
+  executor_dir=$(dirname "${YARN_CONTAINER_EXECUTOR_PATH}")
+  executor_conf_dir=$(dirname "${executor_dir}")/etc/hadoop
+  if [ ! -d "${executor_conf_dir}" ]; then
+    sudo mkdir -p "${executor_conf_dir}"
   fi
 
-  cp -f "$INSTALL_TEMP_DIR/hadoop/yarn/etc/container-executor.cfg" /etc/yarn/sbin/etc/hadoop/
+  cp -f "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/container-executor.cfg" "${executor_conf_dir}" 
 
   # yarn-site.xml
-  sed -i "s/YARN_RESOURCE_MANAGER_HOSTS1_REPLACE/${YARN_RESOURCE_MANAGER_HOSTS[0]}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml"
-  sed -i "s/YARN_RESOURCE_MANAGER_HOSTS2_REPLACE/${YARN_RESOURCE_MANAGER_HOSTS[1]}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml"
-  sed -i "s/HTTP_KEYTAB_LOCATION_REPLACE/${HTTP_KEYTAB_LOCATION}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml"
-  sed -i "s/HTTP_PRINCIPAL_REPLACE/${HTTP_PRINCIPAL}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml"
-  sed -i "s/LOCAL_CLUSTER_ID_REPLACE/${LOCAL_CLUSTER_ID}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml"
-  sed -i "s/YARN_NODEMANAGER_LOCAL_DIRS_REPLACE/${escape_yarn_nodemanager_local_dirs}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml"
-  sed -i "s/YARN_NODEMANAGER_LOG_DIRS_REPLACE/${escape_yarn_nodemanager_log_dirs}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml"
-  sed -i "s/YARN_ZK_ADDRESS_REPLACE/${YARN_ZK_ADDRESS}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml"
-  sed -i "s/YARN_KEYTAB_LOCATION_REPLACE/${YARN_KEYTAB_LOCATION}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml"
-  sed -i "s/HTTP_KEYTAB_LOCATION_REPLACE/${HTTP_KEYTAB_LOCATION}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml"
-  sed -i "s/YARN_TIMELINE_SERVICE_LEVELDB_STATE_STORE_PATH_REPLACE/${YARN_TIMELINE_SERVICE_LEVELDB_STATE_STORE_PATH}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml"
-  sed -i "s/CALICO_NETWORK_NAME_REPLACE/${CALICO_NETWORK_NAME}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml"
+  sed -i "s/YARN_RESOURCE_MANAGER_HOSTS1_REPLACE/${YARN_RESOURCE_MANAGER_HOSTS[0]}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml"
+  sed -i "s/YARN_RESOURCE_MANAGER_HOSTS2_REPLACE/${YARN_RESOURCE_MANAGER_HOSTS[1]}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml"
+  sed -i "s/HTTP_KEYTAB_LOCATION_REPLACE/${escape_http_keytab_location}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml"
+  sed -i "s/LOCAL_CLUSTER_ID_REPLACE/${LOCAL_CLUSTER_ID}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml"
+  sed -i "s/YARN_NODEMANAGER_LOCAL_DIRS_REPLACE/${escape_yarn_nodemanager_local_dirs}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml"
+  sed -i "s/YARN_NODEMANAGER_LOG_DIRS_REPLACE/${escape_yarn_nodemanager_log_dirs}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml"
+  # Make nodemanager local dirs if the host is not in YARN_NODE_MANAGER_EXCLUDE_HOSTS
+  index=$(indexOfNMExcludeHosts "${host}")
+  if [ -z "$index" ]; then
+    arr=(${YARN_NODEMANAGER_LOCAL_DIRS//,/ })
+    index=0
+    while [ "$index" -lt "${#arr[@]}" ]; do
+      mkdir -p "${arr[$index]}"
+      (( index++ ))
+    done
 
-  sed -i "s/YARN_RESOURCEMANAGER_NODES_EXCLUDE_PATH_REPLACE/${YARN_RESOURCEMANAGER_NODES_EXCLUDE_PATH}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml"
-  mkdir -P "${YARN_RESOURCEMANAGER_NODES_EXCLUDE_PATH}"
-  chmod 777 "${YARN_RESOURCEMANAGER_NODES_EXCLUDE_PATH}"
+    arr=(${YARN_NODEMANAGER_LOG_DIRS//,/ })
+    index=0
+    while [ "$index" -lt "${#arr[@]}" ]; do
+      mkdir -p "${arr[$index]}"
+      (( index++ ))
+    done
 
-  # mapred-site.xml
-  sed -i "s/YARN_NODEMANAGER_RECOVERY_DIR_REPLACE/${YARN_NODEMANAGER_RECOVERY_DIR}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/mapred-site.xml"
-  mkdir -P "${YARN_NODEMANAGER_RECOVERY_DIR}"
-  chmod 777 "${YARN_NODEMANAGER_RECOVERY_DIR}"
+    arr=(${YARN_NODEMANAGER_LOCAL_HOME_PATHS//,/ })
+    index=0
+    while [ "$index" -lt "${#arr[@]}" ]; do
+      chown -R yarn "${arr[$index]}"
+      (( index++ ))
+    done
+  fi
+ 
+  sed -i "s/YARN_ZK_ADDRESS_REPLACE/${YARN_ZK_ADDRESS}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml"
+  sed -i "s/YARN_KEYTAB_LOCATION_REPLACE/${escape_yarn_keytab_location}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml"
+  sed -i "s/CALICO_NETWORK_NAME_REPLACE/${CALICO_NETWORK_NAME}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml"
 
-  sed -i "s/YARN_APP_MAPREDUCE_AM_STAGING_DIR_REPLACE/${YARN_APP_MAPREDUCE_AM_STAGING_DIR}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/mapred-site.xml"
-  index=$(indexByRMHosts "${LOCAL_HOST_IP}")
-  if [ -n "$index" ]; then
-    # Only RM needs to execute the following code
-    echo "Create hdfs path ${YARN_APP_MAPREDUCE_AM_STAGING_DIR}"
-    "${HADOOP_HOME}/bin/hadoop" dfs -mkdir -p "${YARN_APP_MAPREDUCE_AM_STAGING_DIR}"
-    "${HADOOP_HOME}/bin/hadoop" dfs chown yarn:hadoop "${YARN_APP_MAPREDUCE_AM_STAGING_DIR}"
-    "${HADOOP_HOME}/bin/hadoop" dfs -chmod 1777 "${YARN_APP_MAPREDUCE_AM_STAGING_DIR}"
+  sed -i "s/YARN_RESOURCEMANAGER_NODES_EXCLUDE_PATH_REPLACE/${escape_yarn_nodemanager_nodes_exclude_path}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml"
+  node_exclude_dir=$(dirname "${YARN_RESOURCEMANAGER_NODES_EXCLUDE_PATH}")
+  if [[ ! -d "${node_exclude_dir}" ]]; then
+    mkdir -p "${YARN_RESOURCEMANAGER_NODES_EXCLUDE_PATH}"
+  fi
+  if [[ ! -f "${YARN_RESOURCEMANAGER_NODES_EXCLUDE_PATH}" ]]; then
+    touch "${YARN_RESOURCEMANAGER_NODES_EXCLUDE_PATH}"
+    chmod 777 "${YARN_RESOURCEMANAGER_NODES_EXCLUDE_PATH}"
   fi
 
+  sed -i "s/YARN_NODEMANAGER_RECOVERY_DIR_REPLACE/${escape_yarn_nodemanager_recovery_dir}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml"
+  mkdir -p "${YARN_NODEMANAGER_RECOVERY_DIR}"
+  chmod 777 "${YARN_NODEMANAGER_RECOVERY_DIR}"
+  
   # core-site.xml
-  sed -i "s/LOCAL_REALM_REPLACE/${LOCAL_REALM}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/core-site.xml"
-  sed -i "s/FS_DEFAULTFS_REPLACE/${FS_DEFAULTFS}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/core-site.xml"
-  sed -i "s/HTTP_KEYTAB_LOCATION_REPLACE/${HTTP_KEYTAB_LOCATION}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/core-site.xml"
+  sed -i "s/LOCAL_REALM_REPLACE/${LOCAL_REALM}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/core-site.xml"
+  sed -i "s/YARN_ZK_ADDRESS_REPLACE/${YARN_ZK_ADDRESS}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/core-site.xml"
+  sed -i "s/FS_DEFAULTFS_REPLACE/${escape_fs_defaults}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/core-site.xml"
+  sed -i "s/HTTP_KEYTAB_LOCATION_REPLACE/${escape_http_keytab_location}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/core-site.xml"
+
+  # WARN: ${HADOOP_HTTP_AUTHENTICATION_SIGNATURE_SECRET_FILE} Can not be empty!
+  echo 'hello submarine' > "${HADOOP_HTTP_AUTHENTICATION_SIGNATURE_SECRET_FILE}"
+  escape_hadoop_http_authentication_signature_secret_file=${HADOOP_HTTP_AUTHENTICATION_SIGNATURE_SECRET_FILE//$find/$replace}
+  sed -i "s/HADOOP_HTTP_AUTHENTICATION_SIGNATURE_SECRET_FILE_REPLACE/${escape_hadoop_http_authentication_signature_secret_file}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/core-site.xml"
+
+  cp -f "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/core-site.xml" "${HADOOP_HOME}/etc/hadoop/"
+  cp -f "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/hdfs-site.xml" "${HADOOP_HOME}/etc/hadoop/"
+
+  install_yarn_container_executor
 }
 
 function install_spark_suffle() {
-  cp -R "${PACKAGE_DIR}/hadoop/yarn/lib/*" "${HADOOP_HOME}/share/hadoop/yarn/lib/"
+  cp -R ${PACKAGE_DIR}/hadoop/yarn/lib/spark* "${HADOOP_HOME}/share/hadoop/yarn/lib/"
+}
+
+function install_lzo_native() {
+  cp -R ${PACKAGE_DIR}/hadoop/yarn/lib/native/libgpl* "${HADOOP_HOME}/lib/native/"
+  cp -R ${PACKAGE_DIR}/hadoop/yarn/lib/hadoop-lzo* "${HADOOP_HOME}/share/hadoop/yarn/lib/" 
+  cp -R ${PACKAGE_DIR}/hadoop/yarn/lib/hadoop-lzo* "${HADOOP_HOME}/share/hadoop/hdfs/lib/" 
+  cp -R ${PACKAGE_DIR}/hadoop/yarn/lib/hadoop-lzo* "${HADOOP_HOME}/share/hadoop/common/lib/"
+  if [ ! -d "${HADOOP_HOME}/share/hadoop/mapreduce/lib/" ]; then
+    mkdir -p "${HADOOP_HOME}/share/hadoop/mapreduce/lib/"
+  fi 
+  cp -R ${PACKAGE_DIR}/hadoop/yarn/lib/hadoop-lzo* "${HADOOP_HOME}/share/hadoop/mapreduce/lib/" 
 }
 
 function install_mapred() {
-  sed -i "s/MAPRED_KEYTAB_LOCATION_REPLACE/${MAPRED_KEYTAB_LOCATION}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/mapred-site.xml"
+  find="/"
+  replace="\\/"
+  escape_mapred_keytab_location=${MAPRED_KEYTAB_LOCATION//$find/$replace}
+  escape_yarn_app_mapreduce_am_staging_dir=${YARN_APP_MAPREDUCE_AM_STAGING_DIR//$find/$replace}
+  escape_fs_defaults=${FS_DEFAULTFS//$find/$replace}
+ 
+  sed -i "s/FS_DEFAULTFS_REPLACE/${escape_fs_defaults}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/mapred-site.xml" 
+  sed -i "s/YARN_APP_MAPREDUCE_AM_STAGING_DIR_REPLACE/${escape_yarn_app_mapreduce_am_staging_dir}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/mapred-site.xml"
+  host=$(hostname)
+  index=$(indexByRMHosts "${host}")
+  if [[ -n "$index" ]]; then
+    # Only RM needs to execute the following code
+    pathExists=$(pathExitsOnHDFS "${YARN_APP_MAPREDUCE_AM_STAGING_DIR}")
+    if [[ -z "${pathExists}" ]]; then
+      echo "Create hdfs path ${YARN_APP_MAPREDUCE_AM_STAGING_DIR}"
+      "${HADOOP_HOME}/bin/hadoop" dfs -mkdir -p "${YARN_APP_MAPREDUCE_AM_STAGING_DIR}"
+      "${HADOOP_HOME}/bin/hadoop" dfs -chown yarn:hadoop "${YARN_APP_MAPREDUCE_AM_STAGING_DIR}"
+      "${HADOOP_HOME}/bin/hadoop" dfs -chmod 1777 "${YARN_APP_MAPREDUCE_AM_STAGING_DIR}"
+    fi
+  fi
+  sed -i "s/MAPRED_KEYTAB_LOCATION_REPLACE/${escape_mapred_keytab_location}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/mapred-site.xml"
 }
 
 function install_yarn_sbin() {
-  cp -R "${PACKAGE_DIR}/hadoop/yarn/sbin/*" "${HADOOP_HOME}/sbin/"
+  find="/"
+  replace="\\/"
+  escape_yarn_gc_log_dir=${YARN_GC_LOG_DIR//$find/$replace}
+  escape_java_home=${JAVA_HOME//$find/$replace}
+  escape_hadoop_home=${HADOOP_HOME//$find/$replace}
+  escape_yarn_pid_dir=${YARN_PID_DIR//$find/$replace}
+  escape_yarn_log_dir=${YARN_LOG_DIR//$find/$replace}
+  cp -R ${PACKAGE_DIR}/hadoop/yarn/sbin/* "${HADOOP_HOME}/sbin/"
+  chown "${HADOOP_SETUP_USER}":yarn "${HADOOP_HOME}"/sbin/*
 
-  sed -i "s/YARN_GC_LOG_DIR_REPLACE/${YARN_GC_LOG_DIR}/g" "${PACKAGE_DIR}/hadoop/yarn/conf/yarn-env.sh"
-  cp -R "${PACKAGE_DIR}/hadoop/yarn/conf/yarn-env.sh" "${HADOOP_HOME}/conf/"
+  if [ ! -d "$YARN_GC_LOG_DIR" ]; then
+    mkdir -p "$YARN_GC_LOG_DIR"
+    chown "${HADOOP_SETUP_USER}":yarn "${YARN_GC_LOG_DIR}"
+    chmod 775 "${YARN_GC_LOG_DIR}"
+  fi
 
-  sed -i "s/YARN_GC_LOG_DIR_REPLACE/${YARN_GC_LOG_DIR}/g" "${PACKAGE_DIR}/hadoop/yarn/conf/mapred-env.sh"
-  cp -R "${PACKAGE_DIR}/hadoop/yarn/conf/mapred-env.sh" "${HADOOP_HOME}/conf/"
+  if [ ! -d "$YARN_LOG_DIR" ]; then
+    mkdir -p "$YARN_LOG_DIR"
+    chown "${HADOOP_SETUP_USER}":yarn "${YARN_LOG_DIR}"
+    chmod 775 "${YARN_LOG_DIR}"
+  fi
+
+  if [ ! -d "$YARN_PID_DIR" ]; then
+    mkdir -p "$YARN_PID_DIR"
+    chown "${HADOOP_SETUP_USER}":yarn "${YARN_PID_DIR}"
+    chmod 775 "${YARN_PID_DIR}"
+  fi  
+ 
+  sed -i "s/YARN_LOG_DIR_REPLACE/${escape_yarn_log_dir}/g" "${INSTALL_TEMP_DIR}/hadoop/yarn/etc/hadoop/hadoop-env.sh"
+  sed -i "s/YARN_PID_DIR_REPLACE/${escape_yarn_pid_dir}/g" "${INSTALL_TEMP_DIR}/hadoop/yarn/etc/hadoop/hadoop-env.sh" 
+  sed -i "s/JAVA_HOME_REPLACE/${escape_java_home}/g" "${INSTALL_TEMP_DIR}/hadoop/yarn/etc/hadoop/hadoop-env.sh"
+  sed -i "s/HADOOP_HOME_REPLACE/${escape_hadoop_home}/g" "${INSTALL_TEMP_DIR}/hadoop/yarn/etc/hadoop/hadoop-env.sh"
+  sed -i "s/GC_LOG_DIR_REPLACE/${escape_yarn_gc_log_dir}/g" "${INSTALL_TEMP_DIR}/hadoop/yarn/etc/hadoop/hadoop-env.sh"
+  cp -R "${INSTALL_TEMP_DIR}/hadoop/yarn/etc/hadoop/hadoop-env.sh" "${HADOOP_HOME}/etc/hadoop/"
+
+  sed -i "s/GC_LOG_DIR_REPLACE/${escape_yarn_gc_log_dir}/g" "${INSTALL_TEMP_DIR}/hadoop/yarn/etc/hadoop/yarn-env.sh"
+  cp -R "${INSTALL_TEMP_DIR}/hadoop/yarn/etc/hadoop/yarn-env.sh" "${HADOOP_HOME}/etc/hadoop/"
+
+  sed -i "s/GC_LOG_DIR_REPLACE/${escape_yarn_gc_log_dir}/g" "${INSTALL_TEMP_DIR}/hadoop/yarn/etc/hadoop/mapred-env.sh"
+  cp -R "${INSTALL_TEMP_DIR}/hadoop/yarn/etc/hadoop/mapred-env.sh" "${HADOOP_HOME}/etc/hadoop/"
 
 cat<<HELPINFO
 You can use the start/stop script in the ${HADOOP_HOME}/sbin/ directory to start or stop the various services of the yarn.
@@ -193,10 +348,6 @@ HELPINFO
 }
 
 function install_yarn_service() {
-  # WARN: ${HADOOP_HTTP_AUTHENTICATION_SIGNATURE_SECRET_FILE} Can not be empty!
-  echo 'hello submarine' > "${HADOOP_HTTP_AUTHENTICATION_SIGNATURE_SECRET_FILE}"
-  sed -i "s/HADOOP_HTTP_AUTHENTICATION_SIGNATURE_SECRET_FILE_REPLACE/${HADOOP_HTTP_AUTHENTICATION_SIGNATURE_SECRET_FILE}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/core-site.xml"
-
 cat<<HELPINFO
 You also need to set the yarn user to be a proxyable user, 
 otherwise you will not be able to get the status of the service. 
@@ -215,12 +366,12 @@ HELPINFO
 }
 
 function install_registery_dns() {
-  sed -i "s/YARN_REGISTRY_DNS_HOST_REPLACE/${YARN_REGISTRY_DNS_HOST}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml"
-  sed -i "s/YARN_REGISTRY_DNS_HOST_PORT_REPLACE/${YARN_REGISTRY_DNS_HOST_PORT}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml"
+  sed -i "s/YARN_REGISTRY_DNS_HOST_REPLACE/${YARN_REGISTRY_DNS_HOST}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml"
+  sed -i "s/YARN_REGISTRY_DNS_HOST_PORT_REPLACE/${YARN_REGISTRY_DNS_HOST_PORT}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml"
 }
 
 function install_job_history() {
-  sed -i "s/YARN_JOB_HISTORY_HOST_REPLACE/${YARN_JOB_HISTORY_HOST}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/mapred-site.xml"
+  sed -i "s/YARN_JOB_HISTORY_HOST_REPLACE/${YARN_JOB_HISTORY_HOST}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/mapred-site.xml"
 }
 
 ## @description  install yarn timeline server
@@ -229,36 +380,82 @@ function install_job_history() {
 ## http://hadoop.apache.org/docs/r3.1.0/hadoop-yarn/hadoop-yarn-site/TimelineServer.html
 function install_timeline_server()
 {
-  # set leveldb configuration
-  sed -i "s/YARN_KEYTAB_LOCATION_REPLACE/${YARN_KEYTAB_LOCATION}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml"
-  sed -i "s/YARN_AGGREGATED_LOG_DIR_REPLACE/${YARN_AGGREGATED_LOG_DIR}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml"
-  sed -i "s/YARN_TIMELINE_SERVICE_HBASE_COPROCESSOR_LOCATION_REPLACE/${YARN_TIMELINE_SERVICE_HBASE_COPROCESSOR_LOCATION}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml"
-  sed -i "s/YARN_TIMELINE_SERVICE_HBASE_CONFIGURATION_FILE_REPLACE/${YARN_TIMELINE_SERVICE_HBASE_CONFIGURATION_FILE}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/yarn-site.xml"
+  find="/"
+  replace="\\/"
+  escape_aggregated_log_dir=${YARN_AGGREGATED_LOG_DIR//$find/$replace}
+  escape_yarn_timeline_service_hbase_configuration_file=${YARN_TIMELINE_SERVICE_HBASE_CONFIGURATION_FILE//$find/$replace}
+  escape_yarn_keytab_location=${YARN_KEYTAB_LOCATION//$find/$replace}
+  escape_yarn_timeline_fs_store_dir=${YARN_TIMELINE_FS_STORE_DIR//$find/$replace}
+  # timeline v1.5
+  escape_yarn_timeline_service_leveldb_state_store_path=${YARN_TIMELINE_SERVICE_LEVELDB_STATE_STORE_PATH//$find/$replace}
 
-if [ "x$YARN_TIMELINE_HOST" != "x$LOCAL_HOST_IP" ]; then
-  return 0
-fi
+  # set leveldb configuration
+  sed -i "s/YARN_KEYTAB_LOCATION_REPLACE/${escape_yarn_keytab_location}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml"
+  sed -i "s/YARN_AGGREGATED_LOG_DIR_REPLACE/${escape_aggregated_log_dir}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml"
+  sed -i "s/YARN_TIMELINE_SERVICE_HBASE_CONFIGURATION_FILE_REPLACE/${escape_yarn_timeline_service_hbase_configuration_file}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml"
+  # timeline v1.5
+  sed -i "s/YARN_TIMELINE_HOST_REPLACE/${YARN_TIMELINE_HOST}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml"
+  sed -i "s/YARN_TIMELINE_SERVICE_LEVELDB_STATE_STORE_PATH_REPLACE/${escape_yarn_timeline_service_leveldb_state_store_path}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml"
+  sed -i "s/YARN_TIMELINE_FS_STORE_DIR_REPLACE/${escape_yarn_timeline_fs_store_dir}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/yarn-site.xml"
+
+  host=$(hostname)
+  if [ "x$YARN_TIMELINE_HOST" != "x$host" ]; then
+    return 0
+  fi
+
+  echo -n "Do you want to create hdfs directories for timelineserver[Y/N]?"
+  read -r answer
+  echo "$answer"
+  if [[ "$answer" = "y" || "$answer" = "Y" ]]; then
+    echo "Continue installing ..."
+  else
+    echo "Stop creating hdfs directories for timelineserver"
+    return 0
+  fi
 
   echo "install yarn timeline server V1.5 ..."
 
 cat<<HELPINFO
-Create '${YARN_AGGREGATED_LOG_DIR}' path on hdfs, Owner is 'yarn', group is 'hadoop', 
+Create "${YARN_AGGREGATED_LOG_DIR}, ${YARN_TIMELINE_FS_STORE_DIR}"
+path on hdfs, Owner is 'yarn', group is 'hadoop', 
 and 'hadoop' group needs to include 'hdfs, yarn, mapred' yarn-site.xml users, etc.
 HELPINFO
-  "${HADOOP_HOME}/bin/hadoop" dfs -mkdir -p "${YARN_AGGREGATED_LOG_DIR}"
-  "${HADOOP_HOME}/bin/hadoop" dfs chown yarn:hadoop "${YARN_AGGREGATED_LOG_DIR}"
-  "${HADOOP_HOME}/bin/hadoop" dfs -chmod 1777 "${YARN_AGGREGATED_LOG_DIR}"
 
-  # yarn.timeline-service.entity-group-fs-store.active-dir in yarn-site.xml
-  "${HADOOP_HOME}/bin/hadoop" dfs -mkdir -p /tmp/submarine-entity-file-history/active
-  "${HADOOP_HOME}/bin/hadoop" dfs chown yarn:hadoop "${YARN_AGGREGATED_LOG_DIR}"
-  "${HADOOP_HOME}/bin/hadoop" dfs -chmod 01777 /tmp/submarine-entity-file-history/active
+  if [[ ! -d "${YARN_TIMELINE_SERVICE_LEVELDB_STATE_STORE_PATH}" ]]; then
+    mkdir -p "${YARN_TIMELINE_SERVICE_LEVELDB_STATE_STORE_PATH}"
+    chown yarn "${YARN_TIMELINE_SERVICE_LEVELDB_STATE_STORE_PATH}"
+  fi
 
-  # yarn.timeline-service.entity-group-fs-store.done-dir in yarn-site.xml
-  "${HADOOP_HOME}/bin/hadoop" dfs -mkdir -p /tmp/submarine-entity-file-history/done
-  "${HADOOP_HOME}/bin/hadoop" dfs chown yarn:hadoop "${YARN_AGGREGATED_LOG_DIR}"
-  "${HADOOP_HOME}/bin/hadoop" dfs -chmod 0700 /tmp/submarine-entity-file-history/done
+  pathExists=$(pathExitsOnHDFS "${YARN_AGGREGATED_LOG_DIR}")
+  if [[ -z "${pathExists}" ]]; then
+    "${HADOOP_HOME}/bin/hadoop" dfs -mkdir -p "${YARN_AGGREGATED_LOG_DIR}"
+    "${HADOOP_HOME}/bin/hadoop" dfs -chown yarn:hadoop "${YARN_AGGREGATED_LOG_DIR}"
+    "${HADOOP_HOME}/bin/hadoop" dfs -chmod 1777 "${YARN_AGGREGATED_LOG_DIR}"
+  fi
 
+  pathExists=$(pathExitsOnHDFS "${YARN_TIMELINE_FS_STORE_DIR}")
+  if [[ -z "${pathExists}" ]]; then
+    # yarn.timeline-service.entity-group-fs-store.active-dir in yarn-site.xml
+    "${HADOOP_HOME}/bin/hadoop" dfs -mkdir -p "${YARN_TIMELINE_FS_STORE_DIR}"
+    "${HADOOP_HOME}/bin/hadoop" dfs -chown yarn:hadoop "${YARN_TIMELINE_FS_STORE_DIR}"
+  fi
+
+  pathExists=$(pathExitsOnHDFS "${YARN_TIMELINE_FS_STORE_DIR}/active")
+  if [[ -z "${pathExists}" ]]; then
+    # yarn.timeline-service.entity-group-fs-store.active-dir in yarn-site.xml
+    "${HADOOP_HOME}/bin/hadoop" dfs -mkdir -p "${YARN_TIMELINE_FS_STORE_DIR}/active"
+    "${HADOOP_HOME}/bin/hadoop" dfs -chown yarn:hadoop "${YARN_TIMELINE_FS_STORE_DIR}/active"
+    "${HADOOP_HOME}/bin/hadoop" dfs -chmod 1777 "${YARN_TIMELINE_FS_STORE_DIR}/active"
+  fi
+
+  pathExists=$(pathExitsOnHDFS "${YARN_TIMELINE_FS_STORE_DIR}/done")
+  if [[ -z "${pathExists}" ]]; then
+    # yarn.timeline-service.entity-group-fs-store.done-dir in yarn-site.xml
+    "${HADOOP_HOME}/bin/hadoop" dfs -mkdir -p "${YARN_TIMELINE_FS_STORE_DIR}/done"
+    "${HADOOP_HOME}/bin/hadoop" dfs -chown yarn:hadoop "${YARN_TIMELINE_FS_STORE_DIR}/done"
+    "${HADOOP_HOME}/bin/hadoop" dfs -chmod 0700 "${YARN_TIMELINE_FS_STORE_DIR}/done"
+  fi
+  
   ## install yarn timeline server V2
   echo "install yarn timeline server V2 ..."
 
@@ -267,32 +464,170 @@ cat<<HELPINFO
 > grant 'yarn', 'RWC'
 > grant 'HTTP', 'R'
 HELPINFO
-  read -p "Do you done the above operation[Y/N]?" answer
-  case $answer in
-  Y | y)
-    echo "Continue installing ...";;
-  N | n)
-    echo "Stop installing the timeline server V2";;
-    return(0);
-  *)
-    echo "Stop installing the timeline server V2";;
-    return(0);
-  esac
+  echo -n "Have you done the above operation[Y/N]?"
+  read -r answer
+  if [[ "$answer" = "y" || "$answer" = "Y" ]]; then
+    echo "Continue installing ..."
+  else
+    echo "Stop installing the timeline server V2"
+    return 0
+  fi
+  
+  pathExists=$(pathExitsOnHDFS "/hbase")
+  if [[ -z "${pathExists}" ]]; then
+    "${HADOOP_HOME}/bin/hadoop" fs -mkdir -p "/hbase"
+    "${HADOOP_HOME}/bin/hadoop" fs -chmod -R 755 "/hbase"
+  fi
 
-  "${HADOOP_HOME}/bin/hadoop" fs -mkdir "${HBASE_COPROCESSOR_LOCATION}/"
-  "${HADOOP_HOME}/bin/hadoop" fs -chmod -R 755 "${HBASE_COPROCESSOR_LOCATION}/"
-  "${HADOOP_HOME}/bin/hadoop" fs -put "${HADOOP_HOME}/share/hadoop/yarn/timelineservice/hadoop-yarn-server-timelineservice-hbase-coprocessor-3.*.jar" "${HBASE_COPROCESSOR_LOCATION}/hadoop-yarn-server-timelineservice.jar"
+  pathExists=$(pathExitsOnHDFS "/hbase/coprocessor")
+  if [[ -z "${pathExists}" ]]; then
+    "${HADOOP_HOME}/bin/hadoop" fs -mkdir -p "/hbase/coprocessor"
+    "${HADOOP_HOME}/bin/hadoop" fs -chmod -R 755 "/hbase/coprocessor"
+  fi
+
+  "${HADOOP_HOME}/bin/hadoop" fs -put "${HADOOP_HOME}"/share/hadoop/yarn/timelineservice/hadoop-yarn-server-timelineservice-hbase-coprocessor-3.*.jar "/hbase/coprocessor/hadoop-yarn-server-timelineservice.jar"
+  "${HADOOP_HOME}/bin/hadoop" fs -chmod 755 "/hbase/coprocessor/hadoop-yarn-server-timelineservice.jar"
 
 cat<<HELPINFO
 2. Copy the timeline hbase jar to the <hbase_client>/lib path:
 HELPINFO
 
-  cp "${HADOOP_HOME}/share/hadoop/yarn/timelineservice/hadoop-yarn-server-timelineservice-hbase-common-3.*-SNAPSHOT.jar" "${HBASE_HOME}/lib"
-  cp "${HADOOP_HOME}/share/hadoop/yarn/timelineservice/hadoop-yarn-server-timelineservice-hbase-client-3.*-SNAPSHOT.jar" "${HBASE_HOME}/lib"
+  if [[ -n "${HBASE_HOME}" ]]; then
+    cp "${HADOOP_HOME}"/share/hadoop/yarn/timelineservice/hadoop-yarn-server-timelineservice-hbase-common-3.*-SNAPSHOT.jar "${HBASE_HOME}/lib"
+    cp "${HADOOP_HOME}"/share/hadoop/yarn/timelineservice/hadoop-yarn-server-timelineservice-hbase-client-3.*-SNAPSHOT.jar "${HBASE_HOME}/lib"
+    cp "${HADOOP_HOME}"/share/hadoop/yarn/timelineservice/hadoop-yarn-server-timelineservice-3.*-SNAPSHOT.jar "${HBASE_HOME}/lib"
+  fi
 
 cat<<HELPINFO
 3. In the hbase server, After using the keytab authentication of yarn, 
 In the <hbase_client> path, Execute the following command to create a schema
 > bin/hbase org.apache.hadoop.yarn.server.timelineservice.storage.TimelineSchemaCreator -create
 HELPINFO
+  echo -n "Have you done the above operation[Y/N]?"
+  read -r answer
+  if [[ "$answer" = "y" || "$answer" = "Y" ]]; then
+    echo "Continue installing ..."
+  else
+    echo "Please initialize hbase timeline schema before you start timelineserver"
+  fi
 }
+
+## @description  start yarn
+## @audience     public
+## @stability    stable
+function start_yarn()
+{
+  current_user=$(whoami)
+  host=$(hostname)
+  
+  # Start RM if the host is in YARN_RESOURCE_MANAGER_HOSTS
+  index=$(indexByRMHosts "${host}")
+  if [ -n "$index" ]; then
+    # Only RM needs to execute the following code
+    echo "Starting resourcemanager..."
+    if [ ${current_user} != "yarn" ]; then
+      su - yarn -c "${HADOOP_HOME}/sbin/start-resourcemanager.sh"
+    else
+      "${HADOOP_HOME}/sbin/start-resourcemanager.sh"
+    fi
+  fi
+
+  # Start nodemanager
+  index=$(indexOfNMExcludeHosts "${host}")
+  if [ -z "$index" ]; then
+    echo "Starting nodemanager..."
+    if [ ${current_user} != "yarn" ]; then
+      su - yarn -c "${HADOOP_HOME}/sbin/start-nodemanager.sh"
+    else
+      "${HADOOP_HOME}/sbin/start-nodemanager.sh"
+    fi
+  fi
+
+  # Start timeline
+  if [ "x$YARN_TIMELINE_HOST" = "x$host" ]; then
+    echo "Starting timelineserver..."
+    if [ ${current_user} != "yarn" ]; then
+      su - yarn -c "${HADOOP_HOME}/sbin/start-timelineserver.sh"
+      su - yarn -c "${HADOOP_HOME}/sbin/start-timelinereader.sh"
+    else
+      ${HADOOP_HOME}/sbin/start-timelineserver.sh
+      ${HADOOP_HOME}/sbin/start-timelinereader.sh
+    fi
+  fi
+
+  # Start jobhistory
+  if [ "x$YARN_JOB_HISTORY_HOST" = "x$host" ]; then
+    echo "Starting mapreduce job history..."
+    if [ ${current_user} != "yarn" ]; then
+      su - yarn -c "${HADOOP_HOME}/sbin/start-mr-jobhistory.sh"
+    else
+      ${HADOOP_HOME}/sbin/start-mr-jobhistory.sh
+    fi
+  fi
+
+  # Start registrydns
+  if [ "x$YARN_REGISTRY_DNS_HOST" = "x$host" ]; then
+    echo "Starting registry dns..."
+    sudo ${HADOOP_HOME}/sbin/start-registrydns.sh
+  fi
+}
+
+## @description  stop yarn
+## @audience     public
+## @stability    stable
+function stop_yarn()
+{
+  current_user=$(whoami)
+  host=$(hostname)
+  # Stop RM if the host is in YARN_RESOURCE_MANAGER_HOSTS
+  index=$(indexByRMHosts "${host}")
+  if [ -n "$index" ]; then
+    # Only RM needs to execute the following code
+    if [ ${current_user} != "yarn" ]; then
+      echo "Stopping resourcemanager..."
+      su - yarn -c "${HADOOP_HOME}/sbin/stop-resourcemanager.sh"
+    else
+      "${HADOOP_HOME}/sbin/stop-resourcemanager.sh"
+    fi
+  fi
+
+  # Stop nodemanager
+  index=$(indexOfNMExcludeHosts "${host}")
+  if [ -z "$index" ]; then
+    echo "Stopping nodemanager..."
+    if [ ${current_user} != "yarn" ]; then
+      su - yarn -c "${HADOOP_HOME}/sbin/stop-nodemanager.sh"
+    else
+      "${HADOOP_HOME}/sbin/stop-nodemanager.sh"
+    fi
+  fi  
+
+  # Stop timeline
+  if [ "x$YARN_TIMELINE_HOST" = "x$host" ]; then
+    echo "Stopping timelineserver..."
+    if [ ${current_user} != "yarn" ]; then
+      su - yarn -c "${HADOOP_HOME}/sbin/stop-timelineserver.sh"
+      su - yarn -c "${HADOOP_HOME}/sbin/stop-timelinereader.sh"
+    else
+      ${HADOOP_HOME}/sbin/stop-timelineserver.sh
+      ${HADOOP_HOME}/sbin/stop-timelinereader.sh
+    fi
+  fi
+
+  # Stop jobhistory
+  if [ "x$YARN_JOB_HISTORY_HOST" = "x$host" ]; then
+    echo "Stopping mapreduce job history..."
+    if [ ${current_user} != "yarn" ]; then
+      su - yarn -c "${HADOOP_HOME}/sbin/stop-mr-jobhistory.sh"
+    else
+      ${HADOOP_HOME}/sbin/stop-mr-jobhistory.sh
+    fi
+  fi
+
+  # Stop registrydns
+  if [ "x$YARN_REGISTRY_DNS_HOST" = "x$host" ]; then
+    echo "Stopping registry dns..."
+    sudo ${HADOOP_HOME}/sbin/stop-registrydns.sh
+  fi
+}
+
