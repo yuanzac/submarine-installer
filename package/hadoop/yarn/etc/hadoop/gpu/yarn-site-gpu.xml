@@ -19,12 +19,6 @@
     <value>yarn.io/gpu</value>
   </property>
 
-  <!--Yarn UI V2-->
-  <property>
-    <name>yarn.webapp.ui2.enable</name>
-    <value>true</value>
-  </property>
-
   <property>
     <name>yarn.nodemanager.resource-plugins.gpu.docker-plugin</name>
     <value>nvidia-docker-v2</value>
