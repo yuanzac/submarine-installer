@@ -76,7 +76,7 @@ function install_docker_config()
   for item in "${ETCD_HOSTS[@]}"
   do
     clusterStore="${clusterStore}${item}:2379"
-    if [[ ${index} -lt ${etcdHostsSize}-1 ]]; then
+    if [[ ${index} -lt ${etcdHostsSize} ]]; then
       clusterStore=${clusterStore}","
     fi
     index=$((index+1))
