@@ -47,8 +47,8 @@ function install_etcd_bin()
   rm -rf "${INSTALL_TEMP_DIR}/etcd-*-linux-amd6"
   tar zxvf "${DOWNLOAD_DIR}/etcd/${ETCD_TAR_GZ}" -C "${INSTALL_TEMP_DIR}"
 
-  cp -f "${INSTALL_TEMP_DIR}/etcd-*-linux-amd64/etcd" /usr/bin
-  cp -f "${INSTALL_TEMP_DIR}/etcd-*-linux-amd64/etcdctl" /usr/bin
+  cp -f "${INSTALL_TEMP_DIR}/etcd-${ETCD_VERSION}-linux-amd64/etcd" /usr/bin
+  cp -f "${INSTALL_TEMP_DIR}/etcd-${ETCD_VERSION}-linux-amd64/etcdctl" /usr/bin
 
   mkdir -p /var/lib/etcd
   chmod -R a+rw /var/lib/etcd

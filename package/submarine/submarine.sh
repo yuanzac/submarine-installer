@@ -20,6 +20,12 @@
 chown :yarn -R /sys/fs/cgroup/cpu,cpuacct
 chmod g+rwx -R /sys/fs/cgroup/cpu,cpuacct
 
+# Grant user yarn the access to /sys/fs/cgroup/memory,
+# which is the subfolder of cgroup mount destination.
+chown :yarn -R /sys/fs/cgroup/memory
+chmod g+rwx -R /sys/fs/cgroup/memory
+
+
 # If GPUs are used，the access to cgroup devices folder is neede as well
 chown :yarn -R /sys/fs/cgroup/devices
 chmod g+rwx -R /sys/fs/cgroup/devices

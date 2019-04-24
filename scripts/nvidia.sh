@@ -44,8 +44,10 @@ function download_nvidia_detect_rpm()
         detect from ${DOWNLOAD_HTTP}/downloads/nvidia/nvidia-detect.rpm \\033[0m"
     fi
   else
-    nvidiaDetectRpm=`curl --silent ${NVIDIA_DETECT_URL} | grep nvidia-detect- | sed 's/.*\(nvidia-detect-.*.rpm\).*/\1/g'`
-    wget --output-document="${DOWNLOAD_DIR}/nvidia/nvidia-detect.rpm" "${NVIDIA_DETECT_URL}/${nvidiaDetectRpm}"
+    nvidiaDetectRpm=`curl --silent ${NVIDIA_DETECT_URL} | grep nvidia-detect- | sed 's/.*\(nvidia-detect-.*.rpm\).*/\1/g' | head -n 1`
+    # Trim the last slash of DOCKER_REPO
+    NVIDIA_DETECT_URL_TRIMED="$(echo -e "${NVIDIA_DETECT_URL}" | sed -e 's/\/*$//')"
+    wget --output-document="${DOWNLOAD_DIR}/nvidia/nvidia-detect.rpm" "${NVIDIA_DETECT_URL_TRIMED}/${nvidiaDetectRpm}"
     if [[ $? -ne 0 ]]; then
       echo -e "\\033[32mshell:> Failed to download nvidia-detect.rpm of nvidia 
         detect from ${NVIDIA_DETECT_URL}/${nvidiaDetectRpm} \\033[0m"

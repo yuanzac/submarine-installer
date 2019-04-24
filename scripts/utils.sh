@@ -64,19 +64,56 @@ function check_install_conf()
 {
   echo "Check if the configuration file configuration is correct ..."
 
+  # check resource manager
+  rmCount=${#YARN_RESOURCE_MANAGER_HOSTS[@]}
+  if [[ $rmCount -gt 2 ]]; then # <>2
+    echo "Number of resource manager nodes = [$rmCount], must be configured equal 2 servers! "
+    exit_install
+  fi
+
+  # 
+  if [ -z "${YARN_REGISTRY_DNS_HOST_PORT}" ]; then
+    echo "YARN_REGISTRY_DNS_HOST_PORT=[$YARN_REGISTRY_DNS_HOST_PORT] is empty! "
+    exit_install
+  fi
+
+  # Check if it is empty
+  if [ -z "${LOCAL_REALM}" ]; then
+    echo "LOCAL_REALM=[$LOCAL_REALM] can not be empty! "
+    exit_install
+  fi
+
+  if [ -z "${HADOOP_KEYTAB_LOCATION}" ]; then
+    echo "HADOOP_KEYTAB_LOCATION=[$HADOOP_KEYTAB_LOCATION] can not be empty! "
+    exit_install
+  fi
+
+  if [ -z "${HADOOP_PRINCIPAL}" ]; then
+    echo "HADOOP_PRINCIPAL=[$HADOOP_PRINCIPAL] can not be empty! "
+    exit_install
+  fi
+
+  if [ -z "${MAPRED_KEYTAB_LOCATION}" ]; then
+    echo "MAPRED_KEYTAB_LOCATION=[$MAPRED_KEYTAB_LOCATION] can not be empty! "
+    exit_install
+  fi
+
+  if [ -z "${YARN_KEYTAB_LOCATION}" ]; then
+    echo "YARN_KEYTAB_LOCATION=[$YARN_KEYTAB_LOCATION] can not be empty! "
+    exit_install
+  fi
+
+  if [ -z "${HTTP_KEYTAB_LOCATION}" ]; then
+    echo "HTTP_KEYTAB_LOCATION=[$HTTP_KEYTAB_LOCATION] can not be empty! "
+    exit_install
+  fi
+
   # check etcd conf
   hostCount=${#ETCD_HOSTS[@]}
   if [[ $hostCount -lt 3 && hostCount -ne 0 ]]; then # <>2
     echo "Number of nodes = [$hostCount], must be configured to be greater than or equal to 3 servers! "
     exit_install
   fi
-  for ip in "${ETCD_HOSTS[@]}"
-  do
-    if ! valid_ip "$ip"; then
-      echo "]ETCD_HOSTS=[$ip], IP address format is incorrect! "
-      exit_install
-    fi
-  done
   echo "Check if the configuration file configuration is correct [ Done ]"
 }
 
@@ -93,6 +130,44 @@ function indexByEtcdHosts() {
     (( index++ ))
   done
   echo ""
+}
+
+## @description  index by Resource Manager Hosts list
+## @audience     public
+## @stability    stable
+function indexByRMHosts() {
+  index=0
+  while [ "$index" -lt "${#YARN_RESOURCE_MANAGER_HOSTS[@]}" ]; do
+    if [ "${YARN_RESOURCE_MANAGER_HOSTS[$index]}" = "$1" ]; then
+      echo $index
+      return
+    fi
+    (( index++ ))
+  done
+  echo ""
+}
+
+## @description  index of node manager exclude Hosts list
+## @audience     public
+## @stability    stable
+function indexOfNMExcludeHosts() {
+  index=0
+  while [ "$index" -lt "${#YARN_NODE_MANAGER_EXCLUDE_HOSTS[@]}" ]; do
+    if [ "${YARN_NODE_MANAGER_EXCLUDE_HOSTS[$index]}" = "$1" ]; then
+      echo $index
+      return
+    fi
+    (( index++ ))
+  done
+  echo ""
+}
+
+## @description  index by Resource Manager Hosts list
+## @audience     public
+## @stability    stable
+function pathExitsOnHDFS() {
+  exists=$("${HADOOP_HOME}/bin/hadoop" dfs -ls -d "$1")
+  echo "${exists}"
 }
 
 ## @description  get local IP

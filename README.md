@@ -25,7 +25,7 @@ Before deploying with submarine-installer, you can refer to the existing configu
 
   LOCAL_DNS_HOST: server-side local DNS IP address configuration, which can be viewed from `/etc/resolv.conf`
 
-  YARN_DNS_HOST: yarn dns server started IP address
+  YARN_REGISTRY_DNS_HOST: yarn dns server started IP address
 
 + **ETCD Configuration**
 

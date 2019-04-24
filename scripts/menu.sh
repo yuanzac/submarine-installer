@@ -87,13 +87,13 @@ HOST:${LOCAL_HOST_IP}            DOWNLOAD_SERVER:http://${DOWNLOAD_SERVER_IP}:${
 [Main menu] > [install component]
 ------------------------------------------------------------------------------------
 MENULIST
-echo -e "  \\e[32m1.instll etcd\\e[0m"
-echo -e "  \\e[32m2.instll docker\\e[0m"
-echo -e "  \\e[32m3.instll calico network\\e[0m"
-echo -e "  \\e[32m4.instll nvidia driver\\e[0m"
-echo -e "  \\e[32m5.instll nvidia docker\\e[0m"
-echo -e "  \\e[32m6.instll yarn container-executor\\e[0m"
-echo -e "  \\e[32m7.instll submarine autorun script\\e[0m"
+echo -e "  \\e[32m1.install etcd\\e[0m"
+echo -e "  \\e[32m2.install docker\\e[0m"
+echo -e "  \\e[32m3.install calico network\\e[0m"
+echo -e "  \\e[32m4.install nvidia driver\\e[0m"
+echo -e "  \\e[32m5.install nvidia docker\\e[0m"
+echo -e "  \\e[32m6.install submarine autorun script\\e[0m"
+echo -e "  \\e[32m7.install yarn\\e[0m"
 echo -e ""
 echo -e "  \\e[32mb.back main menu\\e[0m"
 cat<<MENULIST
@@ -114,16 +114,16 @@ cat<<MENULIST
 
 HOST:${LOCAL_HOST_IP}            DOWNLOAD_SERVER:http://${DOWNLOAD_SERVER_IP}:${DOWNLOAD_SERVER_PORT}
 ====================================================================================
-[Main menu] > [uninstll component]
+[Main menu] > [uninstall component]
 ------------------------------------------------------------------------------------
 MENULIST
-echo -e "  \\e[32m1.uninstll etcd\\e[0m"
-echo -e "  \\e[32m2.uninstll docker\\e[0m"
-echo -e "  \\e[32m3.uninstll calico network\\e[0m"
-echo -e "  \\e[32m4.uninstll nvidia driver\\e[0m"
-echo -e "  \\e[32m5.uninstll nvidia docker\\e[0m"
-echo -e "  \\e[32m6.uninstll yarn container-executor\\e[0m"
-echo -e "  \\e[32m7.uninstll submarine autorun script\\e[0m"
+echo -e "  \\e[32m1.uninstall etcd\\e[0m"
+echo -e "  \\e[32m2.uninstall docker\\e[0m"
+echo -e "  \\e[32m3.uninstall calico network\\e[0m"
+echo -e "  \\e[32m4.uninstall nvidia driver\\e[0m"
+echo -e "  \\e[32m5.uninstall nvidia docker\\e[0m"
+echo -e "  \\e[32m6.uninstall submarine autorun script\\e[0m"
+echo -e "  \\e[32m7.uninstall yarn\\e[0m"
 echo -e ""
 echo -e "  \\e[32mb.back main menu\\e[0m"
 cat<<MENULIST
@@ -144,19 +144,20 @@ cat<<MENULIST
 
 HOST:${LOCAL_HOST_IP}            DOWNLOAD_SERVER:http://${DOWNLOAD_SERVER_IP}:${DOWNLOAD_SERVER_PORT}
 ====================================================================================
-[Main menu] > [stop component]
+[Main menu] > [start component]
 ------------------------------------------------------------------------------------
 MENULIST
 echo -e "  \\e[32m1.start etcd\\e[0m"
 echo -e "  \\e[32m2.start docker\\e[0m"
 echo -e "  \\e[32m3.start calico network\\e[0m"
+echo -e "  \\e[32m4.start yarn\\e[0m"
 echo -e ""
 echo -e "  \\e[32mb.back main menu\\e[0m"
 cat<<MENULIST
 ====================================================================================
 MENULIST
 
-echo -ne "Please input your choice [\\e[32m1\\e[0m-\\e[32m3\\e[0m,\\e[32mb\\e[0m(back)]:"
+echo -ne "Please input your choice [\\e[32m1\\e[0m-\\e[32m4\\e[0m,\\e[32mb\\e[0m(back)]:"
 }
 
 ## @description  stop menu
@@ -176,6 +177,33 @@ MENULIST
 echo -e "  \\e[32m1.stop etcd\\e[0m"
 echo -e "  \\e[32m2.stop docker\\e[0m"
 echo -e "  \\e[32m3.stop calico network\\e[0m"
+echo -e "  \\e[32m4.stop yarn\\e[0m"
+echo -e ""
+echo -e "  \\e[32mb.back main menu\\e[0m"
+cat<<MENULIST
+====================================================================================
+MENULIST
+
+echo -ne "Please input your choice [\\e[32m1\\e[0m-\\e[32m4\\e[0m,\\e[32mb\\e[0m(back)]:"
+}
+
+## @description  install yarn menu
+## @audience     public
+## @stability    stable
+install_yarn_menu()
+{
+cat<<MENULIST
+====================================================================================
+                            SUBMARINE INSTALLER ${SUBMARINE_INSTALLER_VERSION}
+
+HOST:${LOCAL_HOST_IP}            DOWNLOAD_SERVER:http://${DOWNLOAD_SERVER_IP}:${DOWNLOAD_SERVER_PORT}
+====================================================================================
+[Main menu] > [install yarn]
+------------------------------------------------------------------------------------
+MENULIST
+echo -e "  \\e[32m1.instll YARM [every host]\\e[0m"
+echo -e "  \\e[32m2.instll YARM container-executor [every host]\\e[0m"
+echo -e "  \\e[32m3.instll YARM Timeline [one host]\\e[0m"
 echo -e ""
 echo -e "  \\e[32mb.back main menu\\e[0m"
 cat<<MENULIST
@@ -183,6 +211,30 @@ cat<<MENULIST
 MENULIST
 
 echo -ne "Please input your choice [\\e[32m1\\e[0m-\\e[32m3\\e[0m,\\e[32mb\\e[0m(back)]:"
+}
+
+## @description  uninstall yarn menu
+## @audience     public
+## @stability    stable
+uninstall_yarn_menu()
+{
+cat<<MENULIST
+====================================================================================
+                            SUBMARINE INSTALLER ${SUBMARINE_INSTALLER_VERSION}
+
+HOST:${LOCAL_HOST_IP}            DOWNLOAD_SERVER:http://${DOWNLOAD_SERVER_IP}:${DOWNLOAD_SERVER_PORT}
+====================================================================================
+[Main menu] > [install yarn]
+------------------------------------------------------------------------------------
+MENULIST
+echo -e "  \\e[32m1.uninstll Yarn\\e[0m"
+echo -e ""
+echo -e "  \\e[32mb.back main menu\\e[0m"
+cat<<MENULIST
+====================================================================================
+MENULIST
+
+echo -ne "Please input your choice [\\e[32m1\\e[0m-\\e[32m1\\e[0m,\\e[32mb\\e[0m(back)]:"
 }
 
 ## @description  menu operation
@@ -238,7 +290,7 @@ menu_process()
   unset myselect
   # echo "debug=$menu_index-$menu_choice"
   case "$menu_index-$menu_choice" in
-    "1-b"|"2-b"|"3-b"|"4-b"|"5-b"|"6-b")
+    "1-b"|"2-b"|"3-b"|"4-b"|"5-b"|"6-b"|"7-b"|"8-b")
       menu_index="0"
       menu_choice="0"
     ;;
@@ -309,19 +361,19 @@ menu_process()
       fi
     ;;
     "2-6")
-      echo -n "Do you want to install yarn container-executor?[y|n]"
-      read -r myselect
-      if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
-      then
-        install_yarn
-      fi
-    ;;
-    "2-7")
       echo -n "Do you want to install submarine auto start script?[y|n]"
       read -r myselect
       if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
       then
         install_submarine
+      fi
+    ;;
+    "2-7")
+      echo -n "Do you want to install yarn?[y|n]"
+      read -r myselect
+      if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
+      then
+        install_yarn
       fi
     ;;
 # uninstall component
@@ -366,19 +418,19 @@ menu_process()
       fi
     ;;
     "3-6")
-      echo -n "Do you want to uninstall yarn container-executor?[y|n]"
-      read -r myselect
-      if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
-      then
-        uninstall_yarn
-      fi
-    ;;
-    "3-7")
       echo -n "Do you want to uninstall submarine autostart script?[y|n]"
       read -r myselect
       if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
       then
         uninstall_submarine
+      fi
+    ;;
+    "3-7")
+      echo -n "Do you want to uninstall yarn?[y|n]"
+      read -r myselect
+      if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
+      then
+        uninstall_yarn
       fi
     ;;
 # startup component
@@ -406,6 +458,14 @@ menu_process()
         start_calico
       fi
     ;;
+    "4-4")
+      echo -n "Do you want to startup yarn?[y|n]"
+      read -r myselect
+      if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
+      then
+        start_yarn
+      fi
+    ;;
 # stop component
     "5-1")
       echo -n "Do you want to stop etcd?[y|n]"
@@ -429,6 +489,39 @@ menu_process()
       if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
       then
         stop_calico
+      fi
+    ;;
+    "5-4")
+      echo -n "Do you want to stop yarn?[y|n]"
+      read -r myselect
+      if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
+      then
+        stop_yarn
+      fi
+    ;;
+# install yarn
+    "7-1")
+      echo -n "Do you want to instll YARN?[y|n]"
+      read -r myselect
+      if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
+      then
+        install_yarn
+      fi
+    ;;
+    "7-2")
+      echo -n "Do you want to instll container-executor?[y|n]"
+      read -r myselect
+      if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
+      then
+        install_yarn_container_executor
+      fi
+    ;;
+    "7-3")
+      echo -n "Do you want to instll Timeline?[y|n]"
+      read -r myselect
+      if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
+      then
+        install_timeline_server
       fi
     ;;
   esac
