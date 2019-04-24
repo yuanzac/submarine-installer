@@ -189,7 +189,7 @@ function getLocalIP()
 ## @stability    stable
 function get_ip_list()
 {
-  array=$(ifconfig | grep inet | grep -v inet6 | grep -v 127 | sed 's/^[ \t]*//g' | cut -d ' ' -f2)
+  array=$(ip -o -4 addr | awk '{print $4}' | grep -v 127 | cut -d/ -f1)
 
   for ip in "${array[@]}"
   do
