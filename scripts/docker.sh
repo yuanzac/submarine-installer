@@ -110,6 +110,14 @@ function install_docker_config()
 
   sudo cp "$INSTALL_TEMP_DIR/docker/daemon.json" /etc/docker/
   sudo cp "$INSTALL_TEMP_DIR/docker/docker.service" /etc/systemd/system/
+
+  # Change docker store path
+  if [[ -n "${DOCKER_STORE_PATH}" ]]; then
+    mkdir -p "${DOCKER_STORE_PATH}"
+    cp -r /var/lib/docker/* "${DOCKER_STORE_PATH}"
+    rm -rf /var/lib/docker
+    ln -s "${DOCKER_STORE_PATH}" "/var/lib/docker"
+  fi
 }
 
 ## @description  install docker
