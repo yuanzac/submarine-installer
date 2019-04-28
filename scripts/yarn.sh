@@ -172,6 +172,7 @@ function install_yarn_rm_nm()
   escape_yarn_nodemanager_recovery_dir=${YARN_NODEMANAGER_RECOVERY_DIR//$find/$replace}
   escape_fs_defaults=${FS_DEFAULTFS//$find/$replace}
   escape_hadoop_http_authentication_signature_secret_file=${HADOOP_HTTP_AUTHENTICATION_SIGNATURE_SECRET_FILE//$find/$replace}
+  escape_hadoop_home=${HADOOP_HOME//$find/$replace}
 
   # container-executor.cfg`
   sed -i "s/YARN_NODEMANAGER_LOCAL_DIRS_REPLACE/${escape_yarn_nodemanager_local_dirs}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/container-executor.cfg"
@@ -179,6 +180,7 @@ function install_yarn_rm_nm()
   sed -i "s/DOCKER_REGISTRY_REPLACE/${DOCKER_REGISTRY}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/container-executor.cfg"
   sed -i "s/CALICO_NETWORK_NAME_REPLACE/${CALICO_NETWORK_NAME}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/container-executor.cfg"
   sed -i "s/YARN_HIERARCHY_REPLACE/${escape_yarn_hierarchy}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/container-executor.cfg"
+  sed -i "s/HADOOP_HOME_REPLACE/${escape_hadoop_home}/g" "$INSTALL_TEMP_DIR/hadoop/yarn/etc/hadoop/container-executor.cfg"
 
   # enable cgroup for yarn
   . "${PACKAGE_DIR}/submarine/submarine.sh"
