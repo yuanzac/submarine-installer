@@ -605,8 +605,7 @@
   <!--docker configuration-->
   <property>
     <name>yarn.nodemanager.runtime.linux.docker.default-container-network</name>
-    <!--<value>host</value>-->
-    <value>CALICO_NETWORK_NAME_REPLACE</value>
+    <value>YARN_DOCKER_CONTAINER_DEFAULT_NETWORK_REPLACE</value>
   </property>
   <property>
     <name>yarn.nodemanager.runtime.linux.allowed-runtimes</name>
@@ -614,7 +613,7 @@
   </property>
   <property>
     <name>yarn.nodemanager.runtime.linux.docker.allowed-container-networks</name>
-    <value>host,none,bridge,CALICO_NETWORK_NAME_REPLACE</value>
+    <value>YARN_DOCKER_ALLOWED_CONTAINER_NETWORKS_REPLACE</value>
   </property>
   <property>
     <name>yarn.nodemanager.runtime.linux.docker.privileged-containers.allowed</name>
