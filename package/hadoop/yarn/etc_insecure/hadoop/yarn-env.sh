@@ -21,7 +21,7 @@ export YARN_LOG_DIR=$HADOOP_LOG_DIR
 export YARN_PID_DIR=$HADOOP_PID_DIR
 
 GC_LOG_DATE=`date +%F`
-GC_LOG_DIR="${YARN_GC_LOG_DIR_REPLACE}"
+GC_LOG_DIR="GC_LOG_DIR_REPLACE"
 #export RESOURCEMANAGER_JVM_OPTS="-Dcom.netease.appname=ResourceManager -Djava.net.preferIPv4Stack=true -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -Xloggc:$GC_LOG_DIR/resourcemanager.gc.log.$GC_LOG_DATE -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=3 -XX:GCLogFileSize=512M -server -Xmx20480m -Xms20480m -Xmn5120m -XX:SurvivorRatio=4 -Xss256k -XX:PermSize=256m -XX:MaxPermSize=256m -XX:+UseParNewGC -XX:MaxTenuringThreshold=15 -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled -XX:+UseCMSCompactAtFullCollection -XX:+CMSClassUnloadingEnabled -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=75 -XX:-DisableExplicitGC"
 export RESOURCEMANAGER_JVM_OPTS="-Dcom.netease.appname=ResourceManager -Djava.net.preferIPv4Stack=true -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -Xloggc:$GC_LOG_DIR/resourcemanager.gc.log.$GC_LOG_DATE -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=3 -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=6001"
 export NODEMANAGER_JVM_OPTS="-Dcom.netease.appname=NodeManager -Djava.net.preferIPv4Stack=true -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -Xloggc:$GC_LOG_DIR/nodemanager.gc.log.$GC_LOG_DATE -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=3 -XX:GCLogFileSize=512M -server -Xmx5120m -Xms5120m -Xmn1024m -XX:SurvivorRatio=4 -Xss256k -XX:PermSize=256m -XX:MaxPermSize=256m -XX:+UseParNewGC -XX:MaxTenuringThreshold=15 -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled -XX:+UseCMSCompactAtFullCollection -XX:+CMSClassUnloadingEnabled -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=75 -XX:-DisableExplicitGC"
@@ -34,7 +34,7 @@ export NODEMANAGER_JVM_OPTS="-Dcom.netease.appname=NodeManager -Djava.net.prefer
 export HADOOP_YARN_USER=${HADOOP_YARN_USER:-yarn}
 
 # resolve links - $0 may be a softlink
-export YARN_CONF_DIR="${YARN_CONF_DIR:-$HADOOP_YARN_HOME/conf}"
+export YARN_CONF_DIR="${YARN_CONF_DIR:-$HADOOP_YARN_HOME/etc/hadoop}"
 
 # some Java parameters
 # export JAVA_HOME=/home/y/libexec/jdk1.6.0/
