@@ -373,7 +373,13 @@ menu_process()
       read -r myselect
       if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
       then
-        install_yarn
+        if [[ "${YARN_SECURITY}" = "true" ]];then
+          install_yarn
+        elif [[ "${YARN_SECURITY}" = "false" ]];then
+          install_yarn_insecure
+	else
+	  echo "the YARN_SECURITY Value is not support !!!"
+        fi
       fi
     ;;
 # uninstall component
@@ -505,7 +511,13 @@ menu_process()
       read -r myselect
       if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
       then
-        install_yarn
+	if [[ "${YARN_SECURITY}" = "true" ]];then
+          install_yarn
+	elif [[ "${YARN_SECURITY}" = "false" ]];then
+	  install_yarn_insecure
+	else
+	  echo "the YARN_SECURITY Value is not support !!!"
+	fi
       fi
     ;;
     "7-2")
@@ -513,7 +525,13 @@ menu_process()
       read -r myselect
       if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
       then
-        install_yarn_container_executor
+        if [[ "${YARN_SECURITY}" = "true" ]];then
+          install_yarn_container_executor
+        elif [[ "${YARN_SECURITY}" = "false" ]];then
+          install_yarn_container_executor_insecure
+	else
+	  echo "the YARN_SECURITY Value is not support !!!" 
+        fi
       fi
     ;;
     "7-3")
@@ -521,7 +539,13 @@ menu_process()
       read -r myselect
       if [[ "$myselect" = "y" || "$myselect" = "Y" ]]
       then
-        install_timeline_server
+        if [[ "${YARN_SECURITY}" = "true" ]];then
+          install_timeline_server
+        elif [[ "${YARN_SECURITY}" = "false" ]];then
+          install_timeline_server_insecure
+	else
+           echo "the YARN_SECURITY Value is not support !!!"
+        fi
       fi
     ;;
   esac

@@ -39,7 +39,7 @@
 # These options will be appended to the options specified as HADOOP_OPTS
 # and therefore may override any similar flags set in HADOOP_OPTS
 GC_LOG_DATE=`date +%F`
-GC_LOG_DIR="${YARN_GC_LOG_DIR_REPLACE}"
+GC_LOG_DIR="GC_LOG_DIR_REPLACE"
 export MAPRED_HISTORYSERVER_OPTS="-server -Xmx5g -Xms5g -Xmn2g -XX:SurvivorRatio=4 -Xss256k -XX:MetaspaceSize=256m -XX:MaxMetaspaceSize=256m -XX:+UseParNewGC -XX:MaxTenuringThreshold=15 -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled -XX:+UseCMSCompactAtFullCollection -XX:+CMSClassUnloadingEnabled -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=75 -XX:-DisableExplicitGC -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=3 -XX:GCLogFileSize=512M -Xloggc:${GC_LOG_DIR}/rm.gc.log-${GC_LOG_DATE}"
 
 # Specify the log4j settings for the JobHistoryServer
